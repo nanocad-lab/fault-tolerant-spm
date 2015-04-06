@@ -12,7 +12,7 @@ using namespace std;
 // signal to insert jumps
 bool invalidAddressDetected(unordered_set<int>& set, int addressStart, int continueLength)
 {
-	for (int i = addressStart; i < (addressStart + 16 + continueLength); i++){
+	for (int i = addressStart; i < (addressStart + continueLength); i++){
 		if (set.find(i) != set.end()){
 			return true;
 		}
@@ -119,12 +119,43 @@ void adjustBranch(int instruction, int location, int target, int length)
 
 bool is32Bit(int begcommand)
 {
-	int test = begcommand & 0xF800;
-	if (((test >> 13) << 1) != 0xE)
+	if ((begcommand & 0XE000) != 0XE000)
 		return false;
-	if ((begcommand & 0x1800) == 0)
+
+	if ((begcommand & 0XF800) == 0XE000)
 		return false;
+
+	
 	return true;
+}
+
+void hexToCharArr(char* buff, int num, int bytes)
+{
+	int mask = 0xFF;
+	for (int i = 0; i < bytes; i += 1)
+	{
+		buff[i] = num&mask;
+		num = num >> 8;
+	}
+	return;
+}
+
+int signExtend32(int instr, int immlength) {
+	int value = instr;
+	int lengthmask = 0;
+	for (int i = 0; i < immlength; i++)
+	{
+		lengthmask = lengthmask << 1;
+		lengthmask = lengthmask | 1;
+	}
+	if (immlength <= 0)
+		return value;
+	value = value & lengthmask;
+	int mask = 1 << (immlength - 1);
+	if (mask & instr) {
+		value = value | (~lengthmask);
+	}
+	return value;
 }
 
 #endif

@@ -6,14 +6,16 @@
 class Instruction
 {
 public:
-	Instruction(std::string commandType, std::string instruction, int size);
+	Instruction(std::string commandType, char instruction [], int size);
 	int length() { return m_size;}
 	std::string type() { return m_type; }
-	std::string giveInstruction() {return m_instruction;}
-	
+	int giveInstruction(char* buff);
+	int giveInstructionInt(){ return m_instruction_int; }
+	void updateInstructions(int newinstruction);
 private:
 	std::string m_type;
-	std::string m_instruction;
+	char m_instruction [4];
+	int m_instruction_int;
 	int m_size;
 };
 

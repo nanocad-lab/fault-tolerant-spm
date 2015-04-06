@@ -2,13 +2,41 @@
 #include <iostream>
 
 
-Instruction::Instruction(std::string commandType, std::string instruction, int size)
+Instruction::Instruction(std::string commandType, char instruction[], int size)
 : m_type(commandType), m_size(size)
 {
-	m_instruction = instruction.substr(0,size/4);
+	m_instruction_int = 0;
+	for (int i = 0; i < m_size/8; i++)
+	{
+		m_instruction[i] = instruction[i];
+		m_instruction_int = (m_instruction_int << 8) | (0XFF &instruction[i]);
+	}
 	
 }
 
+int Instruction::giveInstruction(char* buff) {
+	if (buff != nullptr)
+	{
+		for (int i = 0; i < m_size / 8; i++)
+		{
+			buff[i] = m_instruction[i];
+		}
+		return m_size;
+	}
+	return -1;
+}
+
+void Instruction::updateInstructions(int newinstruction) //incomplete
+{
+	m_instruction_int = newinstruction;
+	int mask = 0xFF;
+	for (int i = m_size-8; i >= 0; i -= 8)
+	{
+		m_instruction[i / 8] = (mask & newinstruction);
+		newinstruction = newinstruction >> 8;
+	}
+	return;
+}
 int stringToIntInstruction(char* command, int length) // fix this
 {
 	
@@ -25,30 +53,40 @@ int stringToIntInstruction(char* command, int length) // fix this
 
 std::string typeOfInstruction(int instruction, int commandLength)
 {
+	
 	if (commandLength == 16)
 	{
-		switch ((instruction & 0XFC00) >> 10)
+		if ((instruction >> 12) == 0XD) // conditional
 		{
-		case 34: //conditional
-		case 35:
-		case 36:
-		case 37:
-			if (((instruction & 0XF00) != 0XE) && ((instruction & 0XF00) != 0XF))
-			{
-				return "branch";
-			}
-			else
-				return "other";
-		case 38: //unconditional
-		case 39:
-			return "branch";
-		default:
+			return "branch16conditional";
+		}
+		else if ((instruction >> 11) == 0X1C) //undconditional
+		{
+			return "branch16unconditional";
+		}
+		else if ((instruction &  0XB500)== 0XB100)
+		{
+			return "CBZ,CBNZ";
+		}
+		else
+		{
 			return "other";
-		};
+		}
 	}
 	else if (commandLength == 32)
 	{
-		return "not done yet";
+		
+		if ((((instruction >> 27) & 0X1F) == 0X1E) && ((instruction & 0XC000) == 0X8000) && ((instruction& 0x1000) >> 12) == 0)
+			return "branch32conditional";
+		
+		if ((((instruction >> 27) & 0X1F) == 0X1E) && ((instruction & 0XC000) == 0X8000) && ((instruction & 0x1000) >> 12) == 1)
+			return "branch32unconditional";
+
+		if ((((instruction >> 27) & 0X1F) == 0X1E) && ((instruction & 0XC000) == 0XC000) && ((instruction & 0x1000) >> 12) == 1)
+			return "branch32L";
+
+
+		return "32 bit not done yet";
 	}
 	else
 	{
