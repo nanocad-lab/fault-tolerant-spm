@@ -1,6 +1,7 @@
 
 #include "Instruction.h"
 #include "MiscFuncs.h"
+#include "ELF.h"
 #include <vector>
 #include <string>
 #include <unordered_set>
@@ -43,6 +44,8 @@ int main()
 		addressFile.close();
 	}
 
+
+
 	//setup vars
 	int inputeip = 0;
 	int actualeip = 0;
@@ -59,6 +62,88 @@ int main()
 	vector<Instruction> output;
 	char zeroes[4] = { 0, 0, 0, 0};
 	Instruction space("space", zeroes, 16);
+
+	vector<ProgramHeader> programTable;
+	vector<SectionHeader> sectionTable;
+
+	int e_entry = 0;  //memory address of the entry point from where the process starts executing
+	int e_phoff = 0; //points to start of program header table
+	int e_shoff = 0; //points to start of section header table
+	int e_phentsize = 0; //size of program header entry
+	int e_phnum = 0; //number of entries in program header table
+	int e_shentsize = 0; //size of section header table entry
+	int e_shnum = 0; //number of entries in section header table
+
+	ifstream fileset("program.hex", ios::in | ios::binary | ios::ate);
+	if (fileset)
+	{
+		
+		fileset.seekg(24);
+		fileset.read(currCommand, 4); 
+		changeEndian(currCommand, 32, 2);
+		e_entry = stringToIntInstruction(currCommand, 32);
+			
+		fileset.seekg(28);
+		fileset.read(currCommand, 4); 
+		changeEndian(currCommand, 32, 2);
+		//char lol[4];
+		//lol[0] = currCommand[0];
+		////lol[1] = currCommand[1];
+		//lol[2] = currCommand[2];
+		//lol[3] = currCommand[3];
+		e_phoff = stringToIntInstruction(currCommand, 32);
+			
+		fileset.seekg(32);
+		fileset.read(currCommand, 4); 
+		changeEndian(currCommand, 32,2);
+		e_shoff = stringToIntInstruction(currCommand, 32);
+		
+		fileset.seekg(42);
+		fileset.read(currCommand, 2); 
+		changeEndian(currCommand, 16);
+		e_phentsize = stringToIntInstruction(currCommand);
+
+		fileset.seekg(44);
+		fileset.read(currCommand, 2);
+		changeEndian(currCommand, 16);
+		e_phnum = stringToIntInstruction(currCommand);
+
+		fileset.seekg(46);
+		fileset.read(currCommand, 2);
+		changeEndian(currCommand, 16);
+		e_shentsize = stringToIntInstruction(currCommand);
+
+		fileset.seekg(48);
+		fileset.read(currCommand, 2);
+		changeEndian(currCommand, 16);
+		e_shnum = stringToIntInstruction(currCommand);
+		
+		
+		//stuff for program header
+		
+		int progReadAddr = e_phoff;
+		for (int i = 0; i < (e_phnum - 1); i++)   //make something for if e_shnum == 0
+		{
+			//fill in structure
+			ProgramHeader prog(&fileset, progReadAddr, currCommand);
+			programTable.push_back(prog);
+			progReadAddr += e_phentsize;
+		}
+
+		
+		//stuff for section header
+	
+		int sectReadAddr = e_shoff;
+		for (int i = 0; i < (e_shnum - 1); i++)   //make something for if e_shnum == 0
+		{
+			//fill in structure
+			SectionHeader section(&fileset,sectReadAddr, currCommand);
+			sectionTable.push_back(section);
+			sectReadAddr += e_shentsize;
+		}
+
+		fileset.close();
+	}
 
 
 	// begin sorting through code

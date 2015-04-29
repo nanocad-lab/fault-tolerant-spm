@@ -44,8 +44,8 @@ int stringToIntInstruction(char* command, int length) // fix this
 	int result = 0;
 	for (int i = 0; i < length; i++)
 	{	
-		result = result << (8 * i);
-		result += *(command + i ) & 0XFF;
+		result = result << (8);
+		result |= *(command + i ) & 0XFF; //changed this to |= from +=
 		
 	}
 	return result;
