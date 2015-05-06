@@ -5,6 +5,8 @@
 //#include <iostream>
 using namespace std;
 
+//The datamembers for SectionHeader and ProgramHeader are exactly the same as the ones explained in the ELF documentation file mentionedin the README
+
 class SectionHeader
 {
 public:

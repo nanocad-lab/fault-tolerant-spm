@@ -1,0 +1,10 @@
+Items not done yet:
+
+-IT block
+
+-Make current code work on ELF file
+	-make code start looking for faults only in the code section
+
+-Computated Branch
+
+-Check for other instructions that have offsets and modify their offsets if necessary

@@ -80,7 +80,7 @@ void changeEndian(char* command, int length , int version) //convert 16 or 32 bi
 }
 
 
-
+//Was planning on using this to cleanup source but haven't done that yet
 void adjustBranch(int instruction, int location, int target, int length)
 {
 	if (length == 16)
@@ -101,7 +101,7 @@ void adjustBranch(int instruction, int location, int target, int length)
 
 }
 
-bool is32Bit(int begcommand)
+bool is32Bit(int begcommand) //is this a 32 bit command
 {
 	if ((begcommand & 0XE000) != 0XE000)
 		return false;
@@ -113,7 +113,7 @@ bool is32Bit(int begcommand)
 	return true;
 }
 
-void hexToCharArr(char* buff, int num, int bytes)
+void hexToCharArr(char* buff, int num, int bytes) //fill buff with char version of the input number
 {
 	int mask = 0xFF;
 	for (int i = 0; i < bytes; i += 1)
@@ -124,7 +124,7 @@ void hexToCharArr(char* buff, int num, int bytes)
 	return;
 }
 
-int signExtend32(int instr, int immlength) {
+int signExtend32(int instr, int immlength) { //sign extend the input to 32 bit given the length of the inout
 	int value = instr;
 	int lengthmask = 0;
 	for (int i = 0; i < immlength; i++)

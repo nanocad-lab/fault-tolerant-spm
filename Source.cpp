@@ -74,6 +74,7 @@ int main()
 	int e_shentsize = 0; //size of section header table entry
 	int e_shnum = 0; //number of entries in section header table
 
+	//load values for ELF variables
 	ifstream fileset("program.hex", ios::in | ios::binary | ios::ate);
 	if (fileset)
 	{
@@ -119,8 +120,7 @@ int main()
 		e_shnum = stringToIntInstruction(currCommand);
 		
 		
-		//stuff for program header
-		
+		//create program header and fill it in
 		int progReadAddr = e_phoff;
 		for (int i = 0; i < (e_phnum - 1); i++)   //make something for if e_shnum == 0
 		{
@@ -131,8 +131,7 @@ int main()
 		}
 
 		
-		//stuff for section header
-	
+		//create section header and fill it in
 		int sectReadAddr = e_shoff;
 		for (int i = 0; i < (e_shnum - 1); i++)   //make something for if e_shnum == 0
 		{
@@ -146,7 +145,7 @@ int main()
 	}
 
 
-	// begin sorting through code
+	// begin sorting through file again 
 	ifstream file("program.hex", ios::in | ios::binary | ios::ate);
 	if (file)
 	{
@@ -156,7 +155,6 @@ int main()
 		file.seekg(0, file.end);
 		int end = file.tellg();
 		file.seekg(0, file.beg);
-		//ofstream outfile("newprogram.hex", ofstream::binary);
 
 		// load instrucVec with all commands
 		for (int index = 0; inputeip < end; index++) //iterate 16bits at a time  index is for matching index and inputeip in indexMap
@@ -165,8 +163,6 @@ int main()
 			file.read(currCommand, 2); //read 16 bits
 			changeEndian(currCommand, 16);
 			int inputeipstarting = inputeip; // location of current instruction
-			//figure out if 16 or 32 bit and create appropriate instruction object
-			// if 32 bit retrieve rest of command and update eips appropriately
 
 			numCommand = stringToIntInstruction(currCommand);
 
@@ -290,7 +286,7 @@ int main()
 				//what f going to 32 bit instruc
 				int targetaddress = inputaddress + tempImm + 4;  
 							
-				if (addressMap.find(targetaddress) == addressMap.end())
+				if (addressMap.find(targetaddress) == addressMap.end()) //checking to see if branch is trying to branch location not in this file
 				{
 					cout << "problemo" << endl;
 					continue;
@@ -300,9 +296,6 @@ int main()
 				updatedimm = updatedimm >> 1; 
 				//UPDATE INSTRUC DATAMEMEBERS
 				int updatedinstruction = (oldinstruction & 0XFF00) | (updatedimm & 0XFF);
-				//test
-				if (updatedinstruction != oldinstruction)
-					cout << "garbanzo" << endl;
 				output[n].updateInstructions(updatedinstruction);
 				
 			}
@@ -315,7 +308,7 @@ int main()
 				int inputaddress = reverseaddressMap.find(curraddress)->second; // address of branch instruc in input file
 				int targetaddress = inputaddress + tempImm + 4;  
 				
-				if (addressMap.find(targetaddress) == addressMap.end())
+				if (addressMap.find(targetaddress) == addressMap.end()) //checking to see if branch is trying to branch location not in this file
 				{
 					cout << "problemo" << endl;
 					continue;
@@ -325,9 +318,6 @@ int main()
 				updatedimm = updatedimm >> 1;
 				//UPDATE INSTRUC DATAMEMEBERS
 				int updatedinstruction = (oldinstruction & 0XF800) | (updatedimm & 0X7FF);
-				//test
-				if (updatedinstruction != oldinstruction)
-					cout << "garbanzo" << endl;
 				output[n].updateInstructions(updatedinstruction);
 			}
 			else if (output[n].type().find("branch32conditional") != string::npos) 
@@ -346,7 +336,7 @@ int main()
 				int inputaddress = reverseaddressMap.find(curraddress)->second; // address of branch instruc in input file
 				int targetaddress = inputaddress + tempImm + 4;
 
-				if (addressMap.find(targetaddress) == addressMap.end())
+				if (addressMap.find(targetaddress) == addressMap.end()) //checking to see if branch is trying to branch location not in this file
 				{
 					cout << "problemo" << endl;
 					continue;
@@ -363,10 +353,6 @@ int main()
 
 				//UPDATE INSTRUC DATAMEMEBERS
 				int updatedinstruction = (oldinstruction & 0XFBC0D000) | (S << 26) | (J1 << 13) | (J2 << 11) | (imm6 << 5) | imm11;
-
-				//test
-				if (updatedinstruction != oldinstruction)
-					cout << "garbanzo" << endl;
 				output[n].updateInstructions(updatedinstruction);
 				
 				
@@ -388,7 +374,7 @@ int main()
 				int inputaddress = reverseaddressMap.find(curraddress)->second; // address of branch instruc in input file
 				int targetaddress = inputaddress + tempImm + 4;
 
-				if (addressMap.find(targetaddress) == addressMap.end())
+				if (addressMap.find(targetaddress) == addressMap.end()) //checking to see if branch is trying to branch location not in this file
 				{
 					cout << "problemo" << endl;
 					continue;
@@ -405,9 +391,6 @@ int main()
 
 				//UPDATE INSTRUC DATAMEMEBERS
 				int updatedinstruction = (oldinstruction & 0XFBC0D000) | (S << 26) | (J1 << 13) | (J2 << 11) | ((updatedimm & 0X1FF800) << 5) | (updatedimm & 0X7FF);
-				//test
-				if (updatedinstruction != oldinstruction)
-					cout << "garbanzo" << endl;
 				output[n].updateInstructions(updatedinstruction);
 			}
 			else if (output[n].type().find("branch32L") != string::npos) // seems to have same offset as b-unconditional
@@ -427,7 +410,7 @@ int main()
 				int inputaddress = reverseaddressMap.find(curraddress)->second; // address of branch instruc in input file
 				int targetaddress = inputaddress + tempImm + 4;
 
-				if (addressMap.find(targetaddress) == addressMap.end())
+				if (addressMap.find(targetaddress) == addressMap.end()) //checking to see if branch is trying to branch location not in this file
 				{
 					cout << "problemo" << endl;
 					continue;
@@ -444,9 +427,6 @@ int main()
 
 				//UPDATE INSTRUC DATAMEMEBERS
 				int updatedinstruction = (oldinstruction & 0XFBC0D000) | (S << 26) | (J1 << 13) | (J2 << 11) | ((updatedimm & 0X1FF800) << 5) | (updatedimm & 0X7FF);
-				//test
-				if (updatedinstruction != oldinstruction)
-					cout << "garbanzo" << endl;
 				output[n].updateInstructions(updatedinstruction);
 			}
 			else
@@ -455,12 +435,12 @@ int main()
 		}
 
 
-
+//output results to file
 		ofstream outfile("newprogram.hex", ofstream::binary);
 		char* buff = new char[4];
 		//write to outputfile
 		int lineCount = 1;
-		for (int k = 0; k < output.size(); k++)   //change input to out for final just doing this for test
+		for (int k = 0; k < output.size(); k++)   
 		{
 			output[k].giveInstruction(buff);
 			changeEndian(buff, output[k].length());
