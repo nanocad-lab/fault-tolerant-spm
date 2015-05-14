@@ -1,4 +1,3 @@
-
 #include "Instruction.h"
 #include "MiscFuncs.h"
 #include "ELF.h"
@@ -7,12 +6,9 @@
 #include <unordered_set>
 #include <set>
 #include <unordered_map>
-#include <fstream>
+#include <fstream> //for addresses.hex 
 #include <iostream>
 using namespace std;
-
-
-
 
 int main()
 {
@@ -23,7 +19,7 @@ int main()
 	fstream addressFile("addresses.hex");
 	if (addressFile)
 	{
-		char * address = new char[8]; //same number of elements as address size
+		char* address = new char[8]; //same number of elements as address size (8 bytes/32 bits)
 		addressFile.seekg(0, addressFile.end);
 		int end = addressFile.tellg();
 		addressFile.seekg(0, addressFile.beg);
@@ -42,6 +38,11 @@ int main()
 		cout << "There are " << badAddresses.size() << " bad addresses" << endl;
 		delete[] address;
 		addressFile.close();
+	}
+	else {
+		//if addresses.hex cannot be opened, there needs to be a catch for it.
+		cout << "Cannot open addresses.hex" << endl;
+		return -1;
 	}
 
 
@@ -86,6 +87,9 @@ int main()
 		fileset.seekg(28);
 		fileset.read(currCommand, 4); 
 		changeEndian(currCommand, 32, 2);
+
+		//using this to check
+
 		//char lol[4];
 		//lol[0] = currCommand[0];
 		////lol[1] = currCommand[1];
@@ -145,6 +149,7 @@ int main()
 		fileset.close();
 	}
 
+	//needs optimization
 
 	// begin sorting through code
 	ifstream file("program.hex", ios::in | ios::binary | ios::ate);
@@ -406,7 +411,7 @@ int main()
 				//UPDATE INSTRUC DATAMEMEBERS
 				int updatedinstruction = (oldinstruction & 0XFBC0D000) | (S << 26) | (J1 << 13) | (J2 << 11) | ((updatedimm & 0X1FF800) << 5) | (updatedimm & 0X7FF);
 				//test
-				if (updatedinstruction != oldinstruction)
+				if (updatedinstruction != oldinstruction) //needs additional checks
 					cout << "garbanzo" << endl;
 				output[n].updateInstructions(updatedinstruction);
 			}
