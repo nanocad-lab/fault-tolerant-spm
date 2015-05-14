@@ -1,3 +1,6 @@
+#ifndef MISCFUNCS_INCLUDED
+#define MISCFUNCS_INCLUDED
+
 #include <unordered_set>
 #include <iomanip>
 #include <sstream>
@@ -5,9 +8,6 @@
 //#include <iomanip>
 //#include <sstream>
 using namespace std;
-
-#ifndef MISCFUNCS_INCLUDED
-#define MISCFUNCS_INCLUDED
 
 
 // check to see if the address is safe to write
