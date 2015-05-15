@@ -37,3 +37,13 @@ http://flint.cs.yale.edu/cs422/doc/ELF_Format.pdf
 
 
 
+Additional Miscellaneous Information:
+==================================================
+Addresses.hex is a text file with hex representations of 32-bit addresses.
+Each 32-bit address is 8 hex characters, separated in the middle by one space.
+Each address is separated from other addresses by one space.
+
+e.g.
+0403 02AF 28EA 1423 00FF 0243
+
+This is a total of four addresses.
