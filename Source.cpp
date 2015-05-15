@@ -6,36 +6,52 @@
 #include <unordered_set>
 #include <set>
 #include <unordered_map>
-#include <fstream> //for addresses.hex 
+#include <fstream> //for addresses.hex - note: if you are only reading, why use fstream instead of ifstream?
 #include <iostream>
 using namespace std;
 
 int main()
 {
-
+	/*TODO: ADJUST WHERE LOOPS START AND END TO ONLY FIND ADDRESSES IN THE CODE SEGMENT.
+	Elf part of the code was just written recently by Muzammil to figure out where code segment is.
+	
+	Initial assumption was that there is only code in the file, so the iterator in for loops such as the eip
+	is not the eip of the code but the location of the char in the input file.
+	
+	Therefore, location of the code in the file is not necessarily */
 
 	//load invalid addresses into unordered set
 	unordered_set<int> badAddresses;
 	fstream addressFile("addresses.hex");
 	if (addressFile)
 	{
-		char* address = new char[8]; //same number of elements as address size (8 bytes/32 bits)
+		char* address = new char[8]; //same number of elements as address size (8 hex/4 bytes/32 bits)
+		
+		//get length of the file
 		addressFile.seekg(0, addressFile.end);
 		int end = addressFile.tellg();
 		addressFile.seekg(0, addressFile.beg);
-		cout << "Loading adresses" << endl;
-		for (int i = 0; ((i + 9) <= end); i += 10)
+		
+		//load addresses into badAddresses set
+		cout << "Loading addresses" << endl;
+		for (int i = 0; ((i + 9) <= end); i += 10) //10 chars, or 8 hex + 2 spaces makes up one address (e.g. "0001 00FF ")
 		{
+			//copy first four bytes of a given address in hex file into char buffer
 			addressFile.seekg(i);
 			addressFile.read(address, 4);
+
+			//ignore space in the middle and copy last four bytes of a given address in hex file into char buffer
 			addressFile.seekg(i + 5);
 			addressFile.read(address + 4, 4);
 			string addressString(address);
-			int test = stoi(addressString, nullptr, 16);
+			int test = stoi(addressString, nullptr, 16); //what is the purpose of this? not used
 			
 			badAddresses.insert(stoi(addressString, nullptr, 16));
 		}
+
 		cout << "There are " << badAddresses.size() << " bad addresses" << endl;
+
+		//clean up
 		delete[] address;
 		addressFile.close();
 	}
@@ -44,8 +60,6 @@ int main()
 		cout << "Cannot open addresses.hex" << endl;
 		return -1;
 	}
-
-
 
 	//setup vars
 	int inputeip = 0;
