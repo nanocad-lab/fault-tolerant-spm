@@ -1,15 +1,34 @@
 #ifndef ELF_INCLUDED
 #define ELF_INCLUDED
 
+#include <stdint.h> //for exact specified sizes
 #include <fstream>
 //#include <iostream>
+
 using namespace std;
 
-class SectionHeader
+struct ElfHeader
 {
-public:
-	SectionHeader(ifstream* file, int headerStart, char* buff);
-private:
+	ElfHeader(ifstream* file, int elfHeaderStart, char* buff);
+	char e_ident[16];
+	short e_type;
+	short e_machine;
+	int	e_version;
+	int	e_entry;
+	int	e_phoff;
+	int	e_shoff;
+	int	e_flags;
+	short e_ehsize;
+	short e_phentsize;
+	short e_phnum;
+	short e_shentsize;
+	short e_shnum;
+	short e_shstrndx;
+};
+
+struct SectionHeader
+{
+	SectionHeader(ifstream* file, int sectionHeaderStart, char* buff);
 	int wordsh_name;
 	int wordsh_type;
 	int addrsh_addr;
@@ -19,15 +38,11 @@ private:
 	int wordsh_info;
 	int wordsh_addralign;
 	int wordsh_entsize;
-
-
 };
 
-class ProgramHeader
+struct ProgramHeader
 {
-public:
 	ProgramHeader(ifstream* file, int programHeaderStart, char* buff);
-private:
 	int p_type;
 	int p_offset;
 	int p_vaddr;
