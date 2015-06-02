@@ -1,3 +1,6 @@
+#ifndef MISCFUNCS_INCLUDED
+#define MISCFUNCS_INCLUDED
+
 #include <unordered_set>
 #include <iomanip>
 #include <sstream>
@@ -6,9 +9,6 @@
 //#include <sstream>
 using namespace std;
 
-#ifndef MISCFUNCS_INCLUDED
-#define MISCFUNCS_INCLUDED
-
 
 // check to see if the address is safe to write
 // if next or current command is at an invalid address will return true
@@ -16,6 +16,9 @@ using namespace std;
 
 bool invalidAddressDetected(unordered_set<int>& set, int addressStart, int continueLength);
 
+
+//version 1: swap order of every 8 bytes
+//version 2: swap order of entire thing
 void changeEndian(char* command, int length = 16, int version = 1);
 
 
