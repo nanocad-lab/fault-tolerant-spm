@@ -22,31 +22,57 @@ int main()
 
 	//load invalid addresses into unordered set
 	unordered_set<int> badAddresses;
-	fstream addressFile("addresses.hex");
+	system("cd");
+	FILE* addressFile;
+	addressFile = fopen("addresses.txt", "r");
+	if (addressFile == NULL) {
+		cout << "Error: addresses.txt does not exist in the working directory or cannot be opened" << endl;
+		return -1;
+	}
+	cout << "addresses.txt has been opened" << endl;
+	char* addressBuff = new char[8];
+	cout << "Loading addresses" << endl;
+	while (!feof(addressFile)){
+		int scanVal = fscanf(addressFile, " 0x%8c", addressBuff);
+		cout << "scanVal = " << scanVal << endl;
+		string addressString(addressBuff);
+		int temp = stoi(addressString, nullptr, 16);
+		badAddresses.insert(temp);
+	}
+
+	cout << "Addresses successfully loaded" << endl;
+	cout << "There are " << badAddresses.size() << " bad addresses" << endl;
+
+	//clean up
+	delete[] addressBuff;
+	fclose(addressFile);
+	cout << "addresses.txt has been closed" << endl;
+	return 1;
+
+	/*
+	fstream addressFile("addresses.txt");
 	if (addressFile)
 	{
 		char* address = new char[8]; //same number of elements as address size (8 hex/4 bytes/32 bits)
-		
+
 		//get length of the file
 		addressFile.seekg(0, addressFile.end);
 		int end = addressFile.tellg();
 		addressFile.seekg(0, addressFile.beg);
-		
+
 		//load addresses into badAddresses set
 		cout << "Loading addresses" << endl;
-		for (int i = 0; ((i + 9) <= end); i += 10) //10 chars, or 8 hex + 2 spaces makes up one address (e.g. "0001 00FF ")
-		{
-			//copy first four bytes of a given address in hex file into char buffer
-			addressFile.seekg(i);
-			addressFile.read(address, 4);
 
-			//ignore space in the middle and copy last four bytes of a given address in hex file into char buffer
-			addressFile.seekg(i + 5);
-			addressFile.read(address + 4, 4);
-			string addressString(address);
-			int test = stoi(addressString, nullptr, 16); //what is the purpose of this? not used
-			
-			badAddresses.insert(stoi(addressString, nullptr, 16));
+
+		for (int i = 0; ((i + 11) <= end); i += 11)
+		{
+		addressFile.seekg(i+2);
+		addressFile.read(address, 8);
+
+		string addressString(address);
+		int test = stoi(addressString, nullptr, 16); //what is the purpose of this? not used
+
+		badAddresses.insert(stoi(addressString, nullptr, 16));
 		}
 
 		cout << "There are " << badAddresses.size() << " bad addresses" << endl;
@@ -54,12 +80,13 @@ int main()
 		//clean up
 		delete[] address;
 		addressFile.close();
-	}
-	else {
+		}
+		else {
 		//if addresses.hex cannot be opened, there needs to be a catch for it.
-		cout << "Cannot open addresses.hex" << endl;
+		cout << "Cannot open addresses.txt" << endl;
 		return -1;
-	}
+		}
+	}*/
 
 	//setup vars
 	int inputeip = 0;

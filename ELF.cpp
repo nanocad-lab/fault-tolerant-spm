@@ -5,23 +5,6 @@
 
 ElfHeader::ElfHeader(ifstream* file, int elfHeaderStart, char* buff)
 {
-	//ElfHeader offsets and format
-	/* typedef struct {
-		uint8_t		e_ident[ELF_NIDENT = 16];	+0
-		Elf32_Half	e_type;						+16
-		Elf32_Half	e_machine;					+18
-		Elf32_Word	e_version;					+20
-		Elf32_Addr	e_entry;					+24
-		Elf32_Off	e_phoff;					+28
-		Elf32_Off	e_shoff;					+32
-		Elf32_Word	e_flags;					+36
-		Elf32_Half	e_ehsize;					+40
-		Elf32_Half	e_phentsize;				+42
-		Elf32_Half	e_phnum;					+44
-		Elf32_Half	e_shentsize;				+46
-		Elf32_Half	e_shnum;					+48
-		Elf32_Half	e_shstrndx;					+50
-	} Elf32_Ehdr; */
 
 	//e_version, offset by 20
 	file->seekg(elfHeaderStart + 20);
@@ -45,19 +28,6 @@ ElfHeader::ElfHeader(ifstream* file, int elfHeaderStart, char* buff)
 
 SectionHeader::SectionHeader(ifstream* file, int sectionHeaderStart, char* buff)
 {
-	//SectionHeader offsets and format
-	/*typedef struct {
-	Elf32_Word	sh_name;		+0
-	Elf32_Word	sh_type;		+4
-	Elf32_Word	sh_flags;		+8
-	Elf32_Addr	sh_addr;		+12
-	Elf32_Off	sh_offset;		+16
-	Elf32_Word	sh_size;		+20
-	Elf32_Word	sh_link;		+24
-	Elf32_Word	sh_info;		+28
-	Elf32_Word	sh_addralign;	+32
-	Elf32_Word	sh_entsize;		+36
-	} Elf32_Shdr;*/
 
 	file->seekg(sectionHeaderStart);
 	file->read(buff, 4);
@@ -108,16 +78,6 @@ SectionHeader::SectionHeader(ifstream* file, int sectionHeaderStart, char* buff)
 
 ProgramHeader::ProgramHeader(ifstream* file, int programHeaderStart, char* buff)
 {
-	/*typedef struct {
-		Elf32_Word		p_type;		+0
-		Elf32_Off		p_offset;	+4
-		Elf32_Addr		p_vaddr;	+8
-		Elf32_Addr		p_paddr;	+12
-		Elf32_Word		p_filesz;	+16
-		Elf32_Word		p_memsz;	+20
-		Elf32_Word		p_flags;	+24
-		Elf32_Word		p_align;	+28
-	} Elf32_Phdr;*/
 
 	file->seekg(programHeaderStart);
 	file->read(buff, 4);
