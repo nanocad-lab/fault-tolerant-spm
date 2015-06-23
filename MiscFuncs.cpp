@@ -8,7 +8,7 @@ using namespace std;
 // check to see if the address is safe to write
 // if next or current command is at an invalid address will return true
 // signal to insert jumps
-bool invalidAddressDetected(unordered_set<int>& set, int addressStart, int continueLength)
+bool invalidAddressDetected(unordered_set<unsigned int>& set, int addressStart, int continueLength)
 {
 	for (int i = addressStart; i < (addressStart + continueLength); i++){
 		if (set.find(i) != set.end()){

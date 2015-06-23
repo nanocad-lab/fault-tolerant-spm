@@ -14,7 +14,7 @@ using namespace std;
 // if next or current command is at an invalid address will return true
 // signal to insert jumps
 
-bool invalidAddressDetected(unordered_set<int>& set, int addressStart, int continueLength);
+bool invalidAddressDetected(unordered_set<unsigned int>& set, int addressStart, int continueLength);
 
 
 //version 1: swap order of every 8 bytes

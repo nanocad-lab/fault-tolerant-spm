@@ -21,7 +21,7 @@ int main()
 	Therefore, location of the code in the file is not necessarily */
 
 	//load invalid addresses into unordered set
-	unordered_set<int> badAddresses;
+	unordered_set<unsigned int> badAddresses;
 	system("cd");
 	FILE* addressFile;
 	addressFile = fopen("addresses.txt", "r");
@@ -34,10 +34,9 @@ int main()
 	cout << "Loading addresses" << endl;
 	while (!feof(addressFile)){
 		int scanVal = fscanf(addressFile, " 0x%8c", addressBuff);
-		cout << "scanVal = " << scanVal << endl;
 		string addressString(addressBuff);
-		int temp = stoi(addressString, nullptr, 16);
-		badAddresses.insert(temp);
+		unsigned int intAddress = (unsigned int) stoul(addressString, nullptr, 16);
+		badAddresses.insert(intAddress);
 	}
 
 	cout << "Addresses successfully loaded" << endl;
@@ -49,46 +48,6 @@ int main()
 	cout << "addresses.txt has been closed" << endl;
 	return 1;
 
-	/*
-	fstream addressFile("addresses.txt");
-	if (addressFile)
-	{
-		char* address = new char[8]; //same number of elements as address size (8 hex/4 bytes/32 bits)
-
-		//get length of the file
-		addressFile.seekg(0, addressFile.end);
-		int end = addressFile.tellg();
-		addressFile.seekg(0, addressFile.beg);
-
-		//load addresses into badAddresses set
-		cout << "Loading addresses" << endl;
-
-
-		for (int i = 0; ((i + 11) <= end); i += 11)
-		{
-		addressFile.seekg(i+2);
-		addressFile.read(address, 8);
-
-		string addressString(address);
-		int test = stoi(addressString, nullptr, 16); //what is the purpose of this? not used
-
-		badAddresses.insert(stoi(addressString, nullptr, 16));
-		}
-
-		cout << "There are " << badAddresses.size() << " bad addresses" << endl;
-
-		//clean up
-		delete[] address;
-		addressFile.close();
-		}
-		else {
-		//if addresses.hex cannot be opened, there needs to be a catch for it.
-		cout << "Cannot open addresses.txt" << endl;
-		return -1;
-		}
-	}*/
-
-	//setup vars
 	int inputeip = 0;
 	int actualeip = 0;
 	char * currCommand = new char[5];
