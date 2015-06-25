@@ -11,46 +11,47 @@ struct ElfHeader
 {
 	ElfHeader(ifstream* file, int elfHeaderStart, char* buff);
 	char e_ident[16];
-	short e_type;
-	short e_machine;
-	int	e_version;
-	int	e_entry;
-	int	e_phoff;
-	int	e_shoff;
-	int	e_flags;
-	short e_ehsize;
-	short e_phentsize;
-	short e_phnum;
-	short e_shentsize;
-	short e_shnum;
-	short e_shstrndx;
+
+	unsigned short e_type;
+	unsigned short e_machine;
+	unsigned int e_version;
+	unsigned int e_entry; //memory address of the entry point from where the process starts executing
+	unsigned int e_phoff; //points to start of program header table
+	unsigned int e_shoff; //points to start of section header table
+	unsigned int e_flags;
+	unsigned short e_ehsize;
+	unsigned short e_phentsize; //size of program header entry
+	unsigned short e_phnum; //number of entries in program header table
+	unsigned short e_shentsize; //size of section header table entry
+	unsigned short e_shnum; //number of entries in section header table
+	unsigned short e_shstrndx;
 };
 
 struct SectionHeader
 {
 	SectionHeader(ifstream* file, int sectionHeaderStart, char* buff);
-	int wordsh_name;
-	int wordsh_type;
-	int addrsh_addr;
-	int offsh_offset;
-	int wordsh_size;
-	int wordsh_link;
-	int wordsh_info;
-	int wordsh_addralign;
-	int wordsh_entsize;
+	unsigned int wordsh_name;
+	unsigned int wordsh_type;
+	unsigned int addrsh_addr;
+	unsigned int offsh_offset;
+	unsigned int wordsh_size;
+	unsigned int wordsh_link;
+	unsigned int wordsh_info;
+	unsigned int wordsh_addralign;
+	unsigned int wordsh_entsize;
 };
 
 struct ProgramHeader
 {
 	ProgramHeader(ifstream* file, int programHeaderStart, char* buff);
-	int p_type;
-	int p_offset;
-	int p_vaddr;
-	int p_padder;
-	int p_filesz;
-	int p_memsz;
-	int p_flags;
-	int p_align;
+	unsigned int p_type;
+	unsigned int p_offset;
+	unsigned int p_vaddr;
+	unsigned int p_padder;
+	unsigned int p_filesz;
+	unsigned int p_memsz;
+	unsigned int p_flags;
+	unsigned int p_align;
 };
 
 #endif 

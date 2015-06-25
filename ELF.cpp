@@ -6,23 +6,44 @@
 ElfHeader::ElfHeader(ifstream* file, int elfHeaderStart, char* buff)
 {
 
-	//e_version, offset by 20
-	file->seekg(elfHeaderStart + 20);
-	file->read(buff, 4);
-	changeEndian(buff, 32, 2);
-	e_version = stringToIntInstruction(buff, 32);
-
 	//e_entry, offset by 24
 	file->seekg(elfHeaderStart + 24);
-	file->read(buff, 4);
+	file->read(buff, sizeof(e_entry));
 	changeEndian(buff, 32, 2);
-	e_entry = stringToIntInstruction(buff, 32);
+	e_entry = stringToIntInstruction(buff, 32); //this function needs to be fixed.
 
 	//e_phoff, offset by 28
 	file->seekg(elfHeaderStart + 28);
-	file->read(buff, 4);
+	file->read(buff, sizeof(e_phoff));
 	changeEndian(buff, 32, 2);
 	e_phoff = stringToIntInstruction(buff, 32);
+
+	//e_shoff, offset by 32
+	file->seekg(elfHeaderStart + 32);
+	file->read(buff, sizeof(e_shoff));
+	changeEndian(buff, 32, 2);
+	e_shoff = stringToIntInstruction(buff, 32);
+
+	//e_phentsize, offset by 42
+	file->seekg(elfHeaderStart + 42);
+	file->read(buff, sizeof(e_phentsize));
+	changeEndian(buff, 16);
+	e_phentsize = stringToIntInstruction(buff);
+
+	file->seekg(elfHeaderStart + 44);
+	file->read(buff, sizeof(e_phnum));
+	changeEndian(buff, 16);
+	e_phnum = stringToIntInstruction(buff);
+
+	file->seekg(elfHeaderStart + 46);
+	file->read(buff, sizeof(e_shentsize));
+	changeEndian(buff, 16);
+	e_shentsize = stringToIntInstruction(buff);
+
+	file->seekg(elfHeaderStart + 48);
+	file->read(buff, sizeof(e_shnum));
+	changeEndian(buff, 16);
+	e_shnum = stringToIntInstruction(buff);
 
 }
 
