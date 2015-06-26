@@ -16,9 +16,7 @@ int main()
 	Elf part of the code was just written recently by Muzammil to figure out where code segment is.
 	
 	Initial assumption was that there is only code in the file, so the iterator in for loops such as the eip
-	is not the eip of the code but the location of the char in the input file.
-	
-	Therefore, location of the code in the file is not necessarily */
+	is not the eip of the code but the location of the char in the input file.*/
 
 
 	//ADDRESS PARSING SECTION
@@ -35,7 +33,7 @@ int main()
 	cout << "addresses.txt has been opened" << endl;
 	char* addressBuff = new char[8];
 	cout << "Loading addresses" << endl;
-	while (!feof(addressFile)){
+	while (!feof(addressFile)){ //after reading the final address, why does it read it again?
 		int scanVal = fscanf(addressFile, " 0x%8c", addressBuff);
 		string addressString(addressBuff);
 		unsigned int intAddress = (unsigned int) stoul(addressString, nullptr, 16);
