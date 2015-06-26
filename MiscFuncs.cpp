@@ -19,64 +19,14 @@ bool invalidAddressDetected(unordered_set<unsigned int>& set, int addressStart, 
 	return false;
 }
 
-void changeEndian(char* command, int length , int version) //convert 16 or 32 bit command to Big Endian
+void changeEndian(char* buff) //switch buffer's Endianness, essentially just a reverse array algorithm
 {
-	char temp1;
-	if (version == 1)
-	{
-		if (length == 16)   //is this one necessary?
-		{
-			temp1 = command[0];
-			command[0] = command[1];
-			command[1] = temp1;
-
-
-		}
-		else if (length == 32)
-		{
-			temp1 = command[0];
-			command[0] = command[1];
-			command[1] = temp1;
-
-			temp1 = command[2];
-			command[2] = command[3];
-			command[3] = temp1;
-		}
-		else
-			std::cout << "INVALID LENGTH ADDRESS - NO CONVERSION";
+	int buffLength = sizeof(buff) / sizeof(buff[0]);
+	for (int i = 0; i < buffLength / 2; i++){
+		int temp = buff[buffLength - 1 - i];
+		buff[buffLength - 1 - i] = buff[i];
+		buff[i] = temp;
 	}
-	else
-	{
-		if (length == 16)   //is this one necessary?
-		{
-
-		
-
-
-		}
-		else if (length == 32)
-		{
-			temp1 = command[0];
-			command[0] = command[3];
-			command[3] = temp1;
-
-			temp1 = command[1];
-			command[1] = command[2];
-			command[2] = temp1;
-
-			/*temp1 = command[4];
-			command[4] = command[6];
-			command[6] = temp1;
-
-			temp1 = command[5];
-			command[5] = command[7];
-			command[7] = temp1;*/
-		}
-		else
-			std::cout << "INVALID LENGTH ADDRESS - NO CONVERSION";
-	}
-
-	return;
 }
 
 

@@ -123,7 +123,7 @@ int main()
 		{
 			file.seekg(inputeip);
 			file.read(currCommand, 2); //read 16 bits
-			changeEndian(currCommand, 16);
+			changeEndian(currCommand);
 			int inputeipstarting = inputeip; // location of current instruction
 
 			numCommand = stringToIntInstruction(currCommand);
@@ -408,7 +408,7 @@ int main()
 		for (int k = 0; k < output.size(); k++)   
 		{
 			output[k].giveInstruction(buff);
-			changeEndian(buff, output[k].length());
+			changeEndian(buff);
 
 			if (output[k].length() == 16)
 			{
