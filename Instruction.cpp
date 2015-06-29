@@ -1,4 +1,5 @@
 #include "Instruction.h"
+#include "MiscFuncs.h"
 #include <iostream>
 
 
@@ -37,16 +38,15 @@ void Instruction::updateInstructions(int newinstruction) //incomplete
 	}
 	return;
 }
-int stringToIntInstruction(char* command, int length) // fix this
-{
-	
-	length = length / 8;
-	int result = 0;
-	for (int i = 0; i < length; i++)
+unsigned int stringToIntInstruction(char* command, int sizeInBytes, char endianness)
+{	
+	if (endianness == 1)//1 corresponds to little endian, 2 corresponds to big endian
+		changeEndian(command, sizeInBytes);
+	unsigned int result = 0;
+	for (int i = 0; i < sizeInBytes; i++)
 	{	
 		result = result << (8);
-		result |= *(command + i ) & 0XFF; //changed this to |= from +=
-		
+		result |= (command[i] & 0xFF);
 	}
 	return result;
 }

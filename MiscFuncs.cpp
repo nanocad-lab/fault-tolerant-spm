@@ -19,9 +19,8 @@ bool invalidAddressDetected(unordered_set<unsigned int>& set, int addressStart, 
 	return false;
 }
 
-void changeEndian(char* buff) //switch buffer's Endianness, essentially just a reverse array algorithm
+void changeEndian(char* buff, int buffLength) //switch buffer's Endianness
 {
-	int buffLength = sizeof(buff) / sizeof(buff[0]);
 	for (int i = 0; i < buffLength / 2; i++){
 		int temp = buff[buffLength - 1 - i];
 		buff[buffLength - 1 - i] = buff[i];

@@ -35,6 +35,10 @@ ELF:
 --------------------------------------------------
 http://flint.cs.yale.edu/cs422/doc/ELF_Format.pdf
 
+Useful reference for ARM-specific elf field values
+http://infocenter.arm.com/help/topic/com.arm.doc.dui0101a/DUI0101A_Elf.pdf
+
+
 
 
 Additional Miscellaneous Information:

@@ -17,9 +17,7 @@ using namespace std;
 bool invalidAddressDetected(unordered_set<unsigned int>& set, int addressStart, int continueLength);
 
 
-//version 1: swap order of every 8 bytes
-//version 2: swap order of entire thing
-void changeEndian(char* command);
+void changeEndian(char* command, int buffLength);
 
 
 

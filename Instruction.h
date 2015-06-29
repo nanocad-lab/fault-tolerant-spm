@@ -19,7 +19,7 @@ private:
 	int m_size;
 };
 
-int stringToIntInstruction(char* command, int length = 16);
+unsigned int stringToIntInstruction(char* command, int sizeInBytes, char endianness = 2);
 
 
 

@@ -34,25 +34,28 @@ int main()
 	char* addressBuff = new char[8];
 	cout << "Loading addresses" << endl;
 	while (!feof(addressFile)){ //after reading the final address, why does it read it again?
-		int scanVal = fscanf(addressFile, " 0x%8c", addressBuff);
+		int scanVal = fscanf(addressFile, "0x%8c ", addressBuff);
 		string addressString(addressBuff);
 		unsigned int intAddress = (unsigned int) stoul(addressString, nullptr, 16);
 		badAddresses.insert(intAddress);
+
+		/*for (int i = 0; i < 8; i++){
+			cout << addressBuff[i];
+		}*/
+
+		cout << " = " << intAddress << endl;
 	}
 
 	cout << "Addresses successfully loaded" << endl;
 	cout << "There are " << badAddresses.size() << " bad addresses" << endl;
 
-	//clean up
+	//clean up address parsing
 	delete[] addressBuff;
 	fclose(addressFile);
 	cout << "addresses.txt has been closed" << endl;
 
 
-
-
-
-
+	//INSTRUCTION PARSING SECTION
 
 	int inputeip = 0;
 	int actualeip = 0;
@@ -85,7 +88,7 @@ int main()
 		for (int i = 0; i < (elfHeader.e_phnum - 1); i++)   //make something for if e_shnum == 0
 		{
 			//fill in structure
-			ProgramHeader prog(&fileset, progReadAddr, currCommand);
+			ProgramHeader prog(&fileset, progReadAddr, currCommand, &elfHeader);
 			programTable.push_back(prog);
 			progReadAddr += elfHeader.e_phentsize;
 		}
@@ -95,7 +98,7 @@ int main()
 		for (int i = 0; i < (elfHeader.e_shnum - 1); i++)   //make something for if e_shnum == 0
 		{
 			//fill in structure
-			SectionHeader section(&fileset,sectReadAddr, currCommand);
+			SectionHeader section(&fileset, sectReadAddr, currCommand, &elfHeader);
 			sectionTable.push_back(section);
 			sectReadAddr += elfHeader.e_shentsize;
 		}
@@ -106,7 +109,7 @@ int main()
 	//needs optimization
 
 	// begin sorting through file again 
-	ifstream file("program.hex", ios::in | ios::binary | ios::ate);
+	ifstream file("program.elf", ios::in | ios::binary | ios::ate);
 	if (file)
 	{
 		cout << "File opened" << endl;
@@ -121,10 +124,10 @@ int main()
 		{
 			file.seekg(inputeip);
 			file.read(currCommand, 2); //read 16 bits
-			changeEndian(currCommand);
+			changeEndian(currCommand, sizeof(currCommand)/sizeof(currCommand[0]));
 			int inputeipstarting = inputeip; // location of current instruction
 
-			numCommand = stringToIntInstruction(currCommand);
+			numCommand = stringToIntInstruction(currCommand, sizeof(currCommand), '1');
 
 			if (is32Bit(numCommand)) //if not true then 32bit instruction, else 16 bit -- checking to see if op1 == 00 (binary)
 			{
@@ -133,9 +136,9 @@ int main()
 				inputeip += 4;
 				file.read(currCommand + 2, 2); //read next 16 bits  
 				//currCommand[4] = '\0';
-				changeEndian(currCommand + 2); // convert next 16 bits
+				changeEndian(currCommand + 2, sizeof(currCommand)/sizeof(currCommand[0])); // convert next 16 bits
 				numCommand = numCommand << 16;
-				numCommand += stringToIntInstruction(currCommand + 2); //add on next 16 bits
+				numCommand += stringToIntInstruction(currCommand + 2, sizeof(currCommand)/sizeof(currCommand[0]), '1'); //add on next 16 bits
 			}
 			else
 			{
@@ -187,7 +190,7 @@ int main()
 				int encoding = 0XE000 | imm;
 				char temp[2];
 				hexToCharArr(temp, encoding, 2);
-				changeEndian(temp);
+				changeEndian(temp, sizeof(temp)/sizeof(temp[0]));
 				Instruction branch("insertedbranch", temp, 16);
 				output.push_back(branch);
 				actualeip += 2;
@@ -406,7 +409,7 @@ int main()
 		for (int k = 0; k < output.size(); k++)   
 		{
 			output[k].giveInstruction(buff);
-			changeEndian(buff);
+			changeEndian(buff, sizeof(buff)/sizeof(buff[0]));
 
 			if (output[k].length() == 16)
 			{
