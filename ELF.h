@@ -29,7 +29,7 @@ struct ElfHeader
 
 struct SectionHeader
 {
-	SectionHeader(ifstream* file, int sectionHeaderStart, char* buff, ElfHeader* elfHeader);
+	SectionHeader(ifstream* file, int sectionHeaderStart, char* buff, char endianness);
 	unsigned int wordsh_name;
 	unsigned int wordsh_type;
 	unsigned int addrsh_addr;
@@ -43,7 +43,7 @@ struct SectionHeader
 
 struct ProgramHeader
 {
-	ProgramHeader(ifstream* file, int programHeaderStart, char* buff, ElfHeader* elfHeader);
+	ProgramHeader(ifstream* file, int programHeaderStart, char* buff, char endianness);
 	unsigned int p_type;
 	unsigned int p_offset;
 	unsigned int p_vaddr;

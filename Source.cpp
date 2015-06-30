@@ -41,9 +41,9 @@ int main()
 
 		/*for (int i = 0; i < 8; i++){
 			cout << addressBuff[i];
-		}*/
-
+		}
 		cout << " = " << intAddress << endl;
+		*/
 	}
 
 	cout << "Addresses successfully loaded" << endl;
@@ -59,7 +59,7 @@ int main()
 
 	int inputeip = 0;
 	int actualeip = 0;
-	char* currCommand = new char[5];
+	char* currCommand = new char[5]; //arbitrary 5? or what
 	int numCommand = 0; //int form of currCommand
 	int lengthCommand = 0; //length of the current command
 
@@ -84,25 +84,29 @@ int main()
 		ElfHeader elfHeader(&fileset, 0, currCommand);
 		
 		//create program header and fill it in
-		int progReadAddr = elfHeader.e_phoff;
-		for (int i = 0; i < (elfHeader.e_phnum - 1); i++)   //make something for if e_shnum == 0
-		{
-			//fill in structure
-			ProgramHeader prog(&fileset, progReadAddr, currCommand, &elfHeader);
-			programTable.push_back(prog);
-			progReadAddr += elfHeader.e_phentsize;
-		}
-		
+		unsigned int progReadAddr = elfHeader.e_phoff;
+		if (progReadAddr != 0)
+			for (int i = 0; i < (elfHeader.e_phnum - 1); i++)   //make something for if e_shnum == 0
+			{
+				//fill in structure
+				ProgramHeader programHeader(&fileset, progReadAddr, currCommand, elfHeader.e_ident[5]);
+				programTable.push_back(programHeader);
+				progReadAddr += elfHeader.e_phentsize;
+			}
+		else
+			cout << "no program header table" << endl;
 		//create section header and fill it in
-		int sectReadAddr = elfHeader.e_shoff;
-		for (int i = 0; i < (elfHeader.e_shnum - 1); i++)   //make something for if e_shnum == 0
-		{
-			//fill in structure
-			SectionHeader section(&fileset, sectReadAddr, currCommand, &elfHeader);
-			sectionTable.push_back(section);
-			sectReadAddr += elfHeader.e_shentsize;
-		}
-
+		unsigned int sectReadAddr = elfHeader.e_shoff;
+		if (sectReadAddr != 0)
+			for (int i = 0; i < (elfHeader.e_shnum - 1); i++)   //make something for if e_shnum == 0
+			{
+				//fill in structure
+				SectionHeader section(&fileset, sectReadAddr, currCommand, elfHeader.e_ident[5]);
+				sectionTable.push_back(section);
+				sectReadAddr += elfHeader.e_shentsize;
+			}
+		else
+			cout << "no section header table" << endl;
 		fileset.close();
 	}
 

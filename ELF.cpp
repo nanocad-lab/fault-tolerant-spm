@@ -46,10 +46,8 @@ ElfHeader::ElfHeader(ifstream* file, int elfHeaderStart, char* buff)
 	e_shnum = stringToIntInstruction(buff, sizeof(e_shnum), e_ident[5]);
 }
 
-SectionHeader::SectionHeader(ifstream* file, int sectionHeaderStart, char* buff, ElfHeader* elfHeader)
+SectionHeader::SectionHeader(ifstream* file, int sectionHeaderStart, char* buff, char endianness)
 {
-	char endianness = elfHeader->e_ident[5];
-
 	file->seekg(sectionHeaderStart);
 	file->read(buff, sizeof(wordsh_name));
 	wordsh_name = stringToIntInstruction(buff, sizeof(wordsh_name), endianness);
@@ -88,10 +86,8 @@ SectionHeader::SectionHeader(ifstream* file, int sectionHeaderStart, char* buff,
 }
 
 
-ProgramHeader::ProgramHeader(ifstream* file, int programHeaderStart, char* buff, ElfHeader* elfHeader)
+ProgramHeader::ProgramHeader(ifstream* file, int programHeaderStart, char* buff, char endianness)
 {
-	char endianness = elfHeader->e_ident[5];
-
 	file->seekg(programHeaderStart);
 	file->read(buff, sizeof(p_type));
 	p_type = stringToIntInstruction(buff, sizeof(p_type), endianness);
