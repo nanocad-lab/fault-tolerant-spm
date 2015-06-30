@@ -23,7 +23,11 @@ int main()
 
 	//load invalid addresses into unordered set
 	unordered_set<unsigned int> badAddresses;
+
+	cout << "Your working directory is: ";
 	system("cd");
+	cout << endl;
+
 	FILE* addressFile;
 	addressFile = fopen("addresses.txt", "r");
 	if (addressFile == NULL) {
@@ -52,7 +56,7 @@ int main()
 	//clean up address parsing
 	delete[] addressBuff;
 	fclose(addressFile);
-	cout << "addresses.txt has been closed" << endl;
+	cout << "addresses.txt has been closed\n" << endl;;
 
 
 	//INSTRUCTION PARSING SECTION
@@ -72,51 +76,65 @@ int main()
 	vector<Instruction> output;
 	char zeroes[4] = { 0, 0, 0, 0};
 	Instruction space("space", zeroes, 16);
+	char endianness;
 
 	vector<ProgramHeader> programTable;
 	vector<SectionHeader> sectionTable;
 
 
-	//load values for ELF variables
+	//load values for ELF variables, load all section headers and program headers
 	ifstream fileset("program.elf", ios::in | ios::binary | ios::ate);
-	if (fileset)
-	{
+	if (!fileset){
+		cout << "Error: program.elf does not exist in the working directory or cannot be opened" << endl;
+		return -1;
+	}
+	else {
+		cout << "program.elf has been opened" << endl;
 		ElfHeader elfHeader(&fileset, 0, currCommand);
-		
+		endianness = elfHeader.e_ident[5];
+		inputeip = elfHeader.e_entry; //NEW ADDITION, NEEDS TO BE TESTED
+
 		//create program header and fill it in
-		unsigned int progReadAddr = elfHeader.e_phoff;
-		if (progReadAddr != 0)
-			for (int i = 0; i < (elfHeader.e_phnum - 1); i++)   //make something for if e_shnum == 0
+		unsigned int progHdrReadAddr = elfHeader.e_phoff;
+		if (progHdrReadAddr != 0) { //assumption: if e_phnum is 0, then e_phoff is necessarily 0; caught by if statement
+			for (int i = 0; i < (elfHeader.e_phnum - 1); i++) //simple ARM executable, only three types of segment: Text, Data, BSS
 			{
-				//fill in structure
-				ProgramHeader programHeader(&fileset, progReadAddr, currCommand, elfHeader.e_ident[5]);
+				ProgramHeader programHeader(&fileset, progHdrReadAddr, currCommand, endianness);
 				programTable.push_back(programHeader);
-				progReadAddr += elfHeader.e_phentsize;
+				progHdrReadAddr += elfHeader.e_phentsize;
 			}
+			cout << "Program headers loaded" << endl;
+		}
 		else
-			cout << "no program header table" << endl;
+			cout << "Warning: No program header table exists" << endl;
+
 		//create section header and fill it in
 		unsigned int sectReadAddr = elfHeader.e_shoff;
-		if (sectReadAddr != 0)
-			for (int i = 0; i < (elfHeader.e_shnum - 1); i++)   //make something for if e_shnum == 0
+		if (sectReadAddr != 0) { //assumption: if e_shnum is 0, then e_phoff is 0
+			for (int i = 0; i < (elfHeader.e_shnum - 1); i++)
 			{
-				//fill in structure
-				SectionHeader section(&fileset, sectReadAddr, currCommand, elfHeader.e_ident[5]);
+				SectionHeader section(&fileset, sectReadAddr, currCommand, endianness);
 				sectionTable.push_back(section);
 				sectReadAddr += elfHeader.e_shentsize;
 			}
+			cout << "Section headers loaded" << endl;
+		}
 		else
-			cout << "no section header table" << endl;
+			cout << "Warning: No section header table exists" << endl;
 		fileset.close();
+		cout << "program.elf has been closed\n" << endl;
 	}
 
-	//needs optimization
+	//needs optimization <- what needs optimization? -Albert
 
 	// begin sorting through file again 
 	ifstream file("program.elf", ios::in | ios::binary | ios::ate);
-	if (file)
-	{
-		cout << "File opened" << endl;
+	if (!file){
+		cout << "Error: program.elf does not exist in the working directory or cannot be opened" << endl;
+		return -1;
+	}
+	else {
+		cout << "program.elf has been opened" << endl;
 
 		//find end of file
 		file.seekg(0, file.end);
@@ -128,14 +146,11 @@ int main()
 		{
 			file.seekg(inputeip);
 			file.read(currCommand, 2); //read 16 bits
-			changeEndian(currCommand, sizeof(currCommand)/sizeof(currCommand[0]));
 			int inputeipstarting = inputeip; // location of current instruction
 
-			numCommand = stringToIntInstruction(currCommand, sizeof(currCommand), '1');
+			numCommand = stringToIntInstruction(currCommand, 2, endianness);
 
-			if (is32Bit(numCommand)) //if not true then 32bit instruction, else 16 bit -- checking to see if op1 == 00 (binary)
-			{
-
+			if (is32Bit(numCommand)) {//if not true then 32bit instruction, else 16 bit -- checking to see if op1 == 00 (binary)
 				lengthCommand = 32;
 				inputeip += 4;
 				file.read(currCommand + 2, 2); //read next 16 bits  
@@ -150,17 +165,14 @@ int main()
 				inputeip += 2;
 			}
 
-
 			string stringcommand = int_to_hexString(numCommand, lengthCommand / 4);
 
 			//create and push instrucs into tempvec
 			commandType = typeOfInstruction(numCommand, lengthCommand);
 			
-			
 			Instruction currInstruc(commandType, currCommand, lengthCommand);
 			input.push_back(currInstruc);
 			indexMap.insert(make_pair(index, inputeipstarting)); // index, inputeip
-
 		}
 
 
@@ -405,8 +417,9 @@ int main()
 		}
 
 
-//output results to file
-		ofstream outfile("newprogram.hex", ofstream::binary);
+		//output results to file
+		ofstream outfile("newprogram.elf", ofstream::binary);
+		cout << "newprogram.elf is being written to" << endl;
 		char* buff = new char[4];
 		//write to outputfile
 		int lineCount = 1;
@@ -425,21 +438,17 @@ int main()
 				outfile.write(buff + 2, 2);
 			}
 		}
+		//clean up
 		delete[] buff;
-
-
-	}
-	else
-	{
-		cout << "Error opening file" << endl;
+		outfile.close();
+		cout << "newprogram.elf has been closed" << endl;
 	}
 
 	//clean up
-	cout << "File closed" << endl;
 	delete[] currCommand;
 	file.close();
+	cout << "program.elf has been closed\n" << endl;
 
 	cout << "Done" << endl;
-
 
 }
