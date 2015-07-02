@@ -61,17 +61,17 @@ int main()
 
 	//INSTRUCTION PARSING SECTION
 
-	int inputeip = 0;
-	int actualeip = 0;
+	int input_eip = 0;
+	int actual_eip = 0;
 	char* currCommand = new char[5]; //arbitrary 5? or what
 	int numCommand = 0; //int form of currCommand
 	int lengthCommand = 0; //length of the current command
 
 	string commandType;
-	unordered_map<int, int>  indexMap; // index of input, inputeip
-	unordered_map<int, int>	 outputindexMap; //  index of output, actualeip
-	unordered_map<int, int> addressMap; // inputeip, actualeip
-	unordered_map<int, int> reverseaddressMap; // actualeip, inputeip
+	unordered_map<int, int> indexMap; // index of input, input_eip
+	unordered_map<int, int>	outputindexMap; //  index of output, actual_eip
+	unordered_map<int, int> addressMap; // input_eip, actual_eip
+	unordered_map<int, int> reverseaddressMap; // actual_eip, input_eip
 	vector<Instruction> input;
 	vector<Instruction> output;
 	char zeroes[4] = { 0, 0, 0, 0};
@@ -81,6 +81,8 @@ int main()
 	vector<ProgramHeader> programHeaderTable;
 	vector<SectionHeader> sectionHeaderTable;
 
+	unsigned int beg_code_segment;
+	unsigned int end_code_segment;
 
 	//load values for ELF variables, load all section headers and program headers
 	ifstream fileset("program.elf", ios::in | ios::binary | ios::ate);
@@ -92,8 +94,10 @@ int main()
 		cout << "program.elf has been opened" << endl;
 		ElfHeader elfHeader(&fileset, 0, currCommand);
 		endianness = elfHeader.e_ident[5];
-		inputeip = elfHeader.e_entry; //NEW ADDITION, NEEDS TO BE TESTED
-		cout << "entry point address: 0x" << hex << inputeip << endl;
+
+		beg_code_segment = elfHeader.e_entry; //NEW ADDITION, NEEDS TO BE TESTED
+		input_eip = elfHeader.e_entry; //NEW ADDITION, NEEDS TO BE TESTED
+		cout << "entry point address: 0x" << hex << input_eip << endl;
 
 		//create program header and fill it in
 		unsigned int progHdrReadAddr = elfHeader.e_phoff;
@@ -107,6 +111,7 @@ int main()
 				programHeaderTable.push_back(programHeader);
 				progHdrReadAddr += elfHeader.e_phentsize;
 			}
+			end_code_segment = beg_code_segment + programHeaderTable.at(0).p_memsz;
 			cout << "Program headers loaded" << endl;
 			cout << "There are " << programHeaderTable.size() << " entries in the program header table" << endl;
 		}
@@ -150,18 +155,20 @@ int main()
 		int end = file.tellg();
 		file.seekg(0, file.beg);
 
+		//NOTE TO SELF: NOW BEGIN SIFTING THROUGH CODE SEGMENT NOW THAT LIMITS HAVE BEEN FOUND
+
 		// load instrucVec with all commands
-		for (int index = 0; inputeip < end; index++) //iterate 16bits at a time  index is for matching index and inputeip in indexMap
+		for (int index = 0; input_eip < end; index++) //iterate 16bits at a time  index is for matching index and input_eip in indexMap
 		{
-			file.seekg(inputeip);
+			file.seekg(input_eip);
 			file.read(currCommand, 2); //read 16 bits
-			int inputeipstarting = inputeip; // location of current instruction
+			int input_eipstarting = input_eip; // location of current instruction
 
 			numCommand = stringToIntInstruction(currCommand, 2, endianness);
 
 			if (is32Bit(numCommand)) {//if not true then 32bit instruction, else 16 bit -- checking to see if op1 == 00 (binary)
 				lengthCommand = 32;
-				inputeip += 4;
+				input_eip += 4;
 				file.read(currCommand + 2, 2); //read next 16 bits  
 				//currCommand[4] = '\0';
 				changeEndian(currCommand + 2, sizeof(currCommand)/sizeof(currCommand[0])); // convert next 16 bits
@@ -171,7 +178,7 @@ int main()
 			else
 			{
 				lengthCommand = 16;
-				inputeip += 2;
+				input_eip += 2;
 			}
 
 			string stringcommand = int_to_hexString(numCommand, lengthCommand / 4);
@@ -181,7 +188,7 @@ int main()
 			
 			Instruction currInstruc(commandType, currCommand, lengthCommand);
 			input.push_back(currInstruc);
-			indexMap.insert(make_pair(index, inputeipstarting)); // index, inputeip
+			indexMap.insert(make_pair(index, input_eipstarting)); // index, input_eip
 		}
 
 
@@ -189,19 +196,19 @@ int main()
 		//reset loop and go through loop again
 		// insert extra branches and space
 		// adjust offsets
-		for (int i = 0, inputeip = 0; i < input.size();)
+		for (int i = 0, input_eip = 0; i < input.size();)
 		{
 			
 			int instrucLength = input[i].length();
-			inputeip += instrucLength / 8;
-			int startingeip = actualeip;
+			input_eip += instrucLength / 8;
+			int startingeip = actual_eip;
 			int tempVectorIndex = i;
 			int bytesReplaced = 0;
-			while (invalidAddressDetected(badAddresses, actualeip, 2 * bytesReplaced + 4))
+			while (invalidAddressDetected(badAddresses, actual_eip, 2 * bytesReplaced + 4))
 			{
 				bytesReplaced += 8; //block out 32 bits if invalid
 
-				actualeip += 8; // this space will be taken by the space instruction (bytesReplaced)
+				actual_eip += 8; // this space will be taken by the space instruction (bytesReplaced)
 				tempVectorIndex++;
 			}
 
@@ -211,14 +218,14 @@ int main()
 				//add bit zero check and set later
 
 				//if 16bit branch is required assuming 16 bit instruction is next
-				int imm = (actualeip - startingeip - 4) >> 1; 
+				int imm = (actual_eip - startingeip - 4) >> 1; 
 				int encoding = 0XE000 | imm;
 				char temp[2];
 				hexToCharArr(temp, encoding, 2);
 				changeEndian(temp, sizeof(temp)/sizeof(temp[0]));
 				Instruction branch("insertedbranch", temp, 16);
 				output.push_back(branch);
-				actualeip += 2;
+				actual_eip += 2;
 
 				//if 32bit branch is required
 
@@ -233,12 +240,12 @@ int main()
 				{
 					output.push_back(input[i]);
 					//find out input eip
-					inputeip = indexMap.find(i)->second;   //should add a safety check here
-					//insert inputeip and actual pair to addressmap
-					addressMap.insert(make_pair(inputeip, actualeip));
-					reverseaddressMap.insert(make_pair(actualeip, inputeip));
-					outputindexMap.insert(make_pair(output.size()-1, actualeip)); //index, actualeip
-					actualeip += input[i].length() / 8;
+					input_eip = indexMap.find(i)->second;   //should add a safety check here
+					//insert input_eip and actual pair to addressmap
+					addressMap.insert(make_pair(input_eip, actual_eip));
+					reverseaddressMap.insert(make_pair(actual_eip, input_eip));
+					outputindexMap.insert(make_pair(output.size()-1, actual_eip)); //index, actual_eip
+					actual_eip += input[i].length() / 8;
 					j += input[i].length() / 8;
 					i++;
 				}
@@ -249,12 +256,12 @@ int main()
 				//no problems push to output and increment 
 				output.push_back(input[i]);
 				//find out input eip
-				inputeip = indexMap.find(i)->second;   //should add a safety check here
-				//insert inputeip and actual pair to addressmap
-				addressMap.insert(make_pair(inputeip, actualeip));
-				reverseaddressMap.insert(make_pair(actualeip, inputeip));
-				outputindexMap.insert(make_pair(output.size() - 1, actualeip)); //index, actualeip
-				actualeip += input[i].length()/8;
+				input_eip = indexMap.find(i)->second;   //should add a safety check here
+				//insert input_eip and actual pair to addressmap
+				addressMap.insert(make_pair(input_eip, actual_eip));
+				reverseaddressMap.insert(make_pair(actual_eip, input_eip));
+				outputindexMap.insert(make_pair(output.size() - 1, actual_eip)); //index, actual_eip
+				actual_eip += input[i].length()/8;
 				i++;
 			}
 		}
