@@ -78,8 +78,8 @@ int main()
 	Instruction space("space", zeroes, 16);
 	char endianness;
 
-	vector<ProgramHeader> programTable;
-	vector<SectionHeader> sectionTable;
+	vector<ProgramHeader> programHeaderTable;
+	vector<SectionHeader> sectionHeaderTable;
 
 
 	//load values for ELF variables, load all section headers and program headers
@@ -93,31 +93,40 @@ int main()
 		ElfHeader elfHeader(&fileset, 0, currCommand);
 		endianness = elfHeader.e_ident[5];
 		inputeip = elfHeader.e_entry; //NEW ADDITION, NEEDS TO BE TESTED
+		cout << "entry point address: 0x" << hex << inputeip << endl;
 
 		//create program header and fill it in
 		unsigned int progHdrReadAddr = elfHeader.e_phoff;
-		if (progHdrReadAddr != 0) { //assumption: if e_phnum is 0, then e_phoff is necessarily 0; caught by if statement
-			for (int i = 0; i < (elfHeader.e_phnum - 1); i++) //simple ARM executable, only three types of segment: Text, Data, BSS
+		cout << "Program header table starts at 0x" << hex << progHdrReadAddr << endl;
+		cout << "Program header size is " << elfHeader.e_phentsize << endl;
+		cout << "Program header number is " << elfHeader.e_phnum << endl;
+		if (progHdrReadAddr != 0) { //if e_phnum is 0, then e_phoffm must also be 0
+			for (int i = 0; i < elfHeader.e_phnum; i++)
 			{
 				ProgramHeader programHeader(&fileset, progHdrReadAddr, currCommand, endianness);
-				programTable.push_back(programHeader);
+				programHeaderTable.push_back(programHeader);
 				progHdrReadAddr += elfHeader.e_phentsize;
 			}
 			cout << "Program headers loaded" << endl;
+			cout << "There are " << programHeaderTable.size() << " entries in the program header table" << endl;
 		}
 		else
 			cout << "Warning: No program header table exists" << endl;
 
 		//create section header and fill it in
 		unsigned int sectReadAddr = elfHeader.e_shoff;
-		if (sectReadAddr != 0) { //assumption: if e_shnum is 0, then e_phoff is 0
-			for (int i = 0; i < (elfHeader.e_shnum - 1); i++)
+		cout << "Section header table starts at 0x" << hex << sectReadAddr << endl;
+		cout << "Section header size is " << elfHeader.e_shentsize << endl;
+		cout << "Section header number is " << elfHeader.e_shnum << endl;
+		if (sectReadAddr != 0) { //if e_shnum is 0, then e_shoff must also be 0
+			for (int i = 0; i < elfHeader.e_shnum; i++)
 			{
 				SectionHeader section(&fileset, sectReadAddr, currCommand, endianness);
-				sectionTable.push_back(section);
+				sectionHeaderTable.push_back(section);
 				sectReadAddr += elfHeader.e_shentsize;
 			}
 			cout << "Section headers loaded" << endl;
+			cout << "There are " << sectionHeaderTable.size() << " entries in the section header table" << endl;
 		}
 		else
 			cout << "Warning: No section header table exists" << endl;
