@@ -95,15 +95,15 @@ int main()
 		ElfHeader elfHeader(&fileset, 0, currCommand);
 		endianness = elfHeader.e_ident[5];
 
-		beg_code_segment = elfHeader.e_entry; //NEW ADDITION, NEEDS TO BE TESTED
-		input_eip = elfHeader.e_entry; //NEW ADDITION, NEEDS TO BE TESTED
-		cout << "entry point address: 0x" << hex << input_eip << endl;
+		beg_code_segment = elfHeader.e_entry;
+		cout << showbase;
+		cout << "entry point address: " << hex << beg_code_segment << endl;
 
 		//create program header and fill it in
 		unsigned int progHdrReadAddr = elfHeader.e_phoff;
-		cout << "Program header table starts at 0x" << hex << progHdrReadAddr << endl;
-		cout << "Program header size is " << elfHeader.e_phentsize << endl;
-		cout << "Program header number is " << elfHeader.e_phnum << endl;
+		cout << "Program header table starts at " << hex << progHdrReadAddr << endl;
+		cout << "Program header size is " << dec << elfHeader.e_phentsize << " bytes" << endl;
+		cout << "Program header number is " << dec << elfHeader.e_phnum << " headers" << endl;
 		if (progHdrReadAddr != 0) { //if e_phnum is 0, then e_phoffm must also be 0
 			for (int i = 0; i < elfHeader.e_phnum; i++)
 			{
@@ -113,16 +113,16 @@ int main()
 			}
 			end_code_segment = beg_code_segment + programHeaderTable.at(0).p_memsz;
 			cout << "Program headers loaded" << endl;
-			cout << "There are " << programHeaderTable.size() << " entries in the program header table" << endl;
+			cout << "There are " << dec << programHeaderTable.size() << " entries in the program header table" << endl;
 		}
 		else
 			cout << "Warning: No program header table exists" << endl;
 
 		//create section header and fill it in
 		unsigned int sectReadAddr = elfHeader.e_shoff;
-		cout << "Section header table starts at 0x" << hex << sectReadAddr << endl;
-		cout << "Section header size is " << elfHeader.e_shentsize << endl;
-		cout << "Section header number is " << elfHeader.e_shnum << endl;
+		cout << "Section header table starts at " << hex << sectReadAddr << endl;
+		cout << "Section header size is " << dec << elfHeader.e_shentsize << " bytes" << endl;
+		cout << "Section header number is " << dec << elfHeader.e_shnum << " headers" << endl;
 		if (sectReadAddr != 0) { //if e_shnum is 0, then e_shoff must also be 0
 			for (int i = 0; i < elfHeader.e_shnum; i++)
 			{
@@ -131,7 +131,7 @@ int main()
 				sectReadAddr += elfHeader.e_shentsize;
 			}
 			cout << "Section headers loaded" << endl;
-			cout << "There are " << sectionHeaderTable.size() << " entries in the section header table" << endl;
+			cout << "There are " << dec << sectionHeaderTable.size() << " entries in the section header table" << endl;
 		}
 		else
 			cout << "Warning: No section header table exists" << endl;
@@ -139,9 +139,8 @@ int main()
 		cout << "program.elf has been closed\n" << endl;
 	}
 
-	//needs optimization <- what needs optimization? -Albert
-
-	// begin sorting through file again 
+	//SORT THROUGH FILE AND ADJUST CODE 
+	//needs optimization in future after gotten working
 	ifstream file("program.elf", ios::in | ios::binary | ios::ate);
 	if (!file){
 		cout << "Error: program.elf does not exist in the working directory or cannot be opened" << endl;
@@ -150,18 +149,52 @@ int main()
 	else {
 		cout << "program.elf has been opened" << endl;
 
-		//find end of file
-		file.seekg(0, file.end);
-		int end = file.tellg();
-		file.seekg(0, file.beg);
-
 		//NOTE TO SELF: NOW BEGIN SIFTING THROUGH CODE SEGMENT NOW THAT LIMITS HAVE BEEN FOUND
 
 		// load instrucVec with all commands
-		for (int index = 0; input_eip < end; index++) //iterate 16bits at a time  index is for matching index and input_eip in indexMap
+		input_eip = beg_code_segment;
+		int offset = 0;
+		int index = 0;
+		while ((beg_code_segment + offset) < end_code_segment){
+			int new_offset = offset;
+			file.seekg(beg_code_segment + offset);
+			file.read(currCommand, 2);
+
+			numCommand = stringToIntInstruction(currCommand, 2, endianness);
+			
+			if (is32Bit(numCommand)){
+				lengthCommand = 4;
+				new_offset += 4;
+				file.read(currCommand + 2, 2);
+				changeEndian(currCommand + 2, 2);
+				numCommand = numCommand << 16;
+				numCommand |= stringToIntInstruction(currCommand + 2, 2, endianness);
+			}
+			else{
+				lengthCommand = 2;
+				new_offset += 2;
+			}
+			string stringCommand = int_to_hexString(numCommand, lengthCommand);
+			//create and push instrucs into tempvec
+			commandType = typeOfInstruction(numCommand, lengthCommand);
+
+			Instruction currInstruc(commandType, currCommand, lengthCommand);
+			input.push_back(currInstruc);
+			indexMap.insert(make_pair(index, input_eipstarting)); // index, input_eip
+
+			index++;
+			offset = new_offset;
+		}
+		/*for (int index = 0; input_eip < end_code_segment; index++) //iterate 16bits at a time  index is for matching index and input_eip in indexMap
 		{
+			if (endianness == 2) {
+				cout << "Error: Can't handle big endian right now!" << endl;
+				return -1;
+			}
+
+			//current code inside this loop assumes little endian
 			file.seekg(input_eip);
-			file.read(currCommand, 2); //read 16 bits
+			file.read(currCommand, 2); //read first two bytes
 			int input_eipstarting = input_eip; // location of current instruction
 
 			numCommand = stringToIntInstruction(currCommand, 2, endianness);
@@ -171,7 +204,7 @@ int main()
 				input_eip += 4;
 				file.read(currCommand + 2, 2); //read next 16 bits  
 				//currCommand[4] = '\0';
-				changeEndian(currCommand + 2, sizeof(currCommand)/sizeof(currCommand[0])); // convert next 16 bits
+				changeEndian(currCommand + 2, sizeof(currCommand)/sizeof(currCommand[0])); // convert next 16 bits, doesn't work correctly right now
 				numCommand = numCommand << 16;
 				numCommand += stringToIntInstruction(currCommand + 2, sizeof(currCommand)/sizeof(currCommand[0]), '1'); //add on next 16 bits
 			}
@@ -189,7 +222,7 @@ int main()
 			Instruction currInstruc(commandType, currCommand, lengthCommand);
 			input.push_back(currInstruc);
 			indexMap.insert(make_pair(index, input_eipstarting)); // index, input_eip
-		}
+		}*/
 
 
 

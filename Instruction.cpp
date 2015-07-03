@@ -38,6 +38,7 @@ void Instruction::updateInstructions(int newinstruction) //incomplete
 	}
 	return;
 }
+
 unsigned int stringToIntInstruction(char* command, int sizeInBytes, char endianness)
 {	
 	if (endianness == 1)//1 corresponds to little endian, 2 corresponds to big endian

@@ -50,14 +50,13 @@ void adjustBranch(int instruction, int location, int target, int length)
 
 }
 
-bool is32Bit(int begcommand) //is this a 32 bit command
+bool is32Bit(int begcommand) //if bits [15:11] of half-word being decoded are 0b11101, 0b11110, or 0b11111, it's first half-word of 32-bit instruction
 {
-	if ((begcommand & 0XE000) != 0XE000)
+	if ((begcommand & 0xE000) != 0xE000) //if bits [15:13] aren't 1s, not 32-bit
 		return false;
 
-	if ((begcommand & 0XF800) == 0XE000)
+	if ((begcommand & 0xF800) == 0xE000) //if bits [12:11] are 0s, not 32-bit
 		return false;
-
 
 	return true;
 }

@@ -19,9 +19,7 @@ private:
 	int m_size;
 };
 
-unsigned int stringToIntInstruction(char* command, int sizeInBytes, char endianness = 2);
-
-
+unsigned int stringToIntInstruction(char* command, int sizeInBytes, char endianness = 1); //assume little endian
 
 std::string typeOfInstruction(int instruction, int commandLength);
 
