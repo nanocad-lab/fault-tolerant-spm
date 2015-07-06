@@ -55,7 +55,7 @@ bool is32Bit(int begcommand) //if bits [15:11] of half-word being decoded are 0b
 	if ((begcommand & 0xE000) != 0xE000) //if bits [15:13] aren't 1s, not 32-bit
 		return false;
 
-	if ((begcommand & 0xF800) == 0xE000) //if bits [12:11] are 0s, not 32-bit
+	if ((begcommand & 0xF800) == 0xE000) //if bits [15:13] are 1s but [12:11] are 0s, not 32-bit
 		return false;
 
 	return true;

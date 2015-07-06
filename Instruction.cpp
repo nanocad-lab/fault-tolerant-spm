@@ -57,15 +57,15 @@ std::string typeOfInstruction(int instruction, int commandLength)
 	
 	if (commandLength == 16)
 	{
-		if ((instruction >> 12) == 0XD) // conditional
+		if ((instruction >> 12) == 0XD) //conditional
 		{
 			return "branch16conditional";
 		}
-		else if ((instruction >> 11) == 0X1C) //undconditional
+		else if ((instruction >> 11) == 0X1C) //unconditional
 		{
 			return "branch16unconditional";
 		}
-		else if ((instruction &  0XB500)== 0XB100)
+		else if ((instruction &  0XB500)== 0XB100) //? check this
 		{
 			return "CBZ,CBNZ";
 		}

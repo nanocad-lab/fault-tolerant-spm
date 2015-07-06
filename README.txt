@@ -55,3 +55,7 @@ e.g.
 This program is operating under the assumption that the ELF file is little endian.
 This is because the ARM LPC1768, our target microcontroller, is little endian.
 In normal situations, the ELF file is the same endianness as the target machine.
+ARM specifications store instructions as little endian; memory may be either.
+
+The function name "stringToIntInstruction" is a bit misleading.
+It just takes a byte buffer and stores it in a data type of appropriate size.

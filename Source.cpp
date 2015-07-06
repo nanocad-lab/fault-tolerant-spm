@@ -37,7 +37,7 @@ int main()
 	cout << "addresses.txt has been opened" << endl;
 	char* addressBuff = new char[8];
 	cout << "Loading addresses" << endl;
-	while (!feof(addressFile)){ //after reading the final address, why does it read it again?
+	while (!feof(addressFile)){
 		int scanVal = fscanf(addressFile, "0x%8c ", addressBuff);
 		string addressString(addressBuff);
 		unsigned int intAddress = (unsigned int) stoul(addressString, nullptr, 16);
@@ -64,7 +64,7 @@ int main()
 	int input_eip = 0;
 	int actual_eip = 0;
 	char* currCommand = new char[5]; //arbitrary 5? or what
-	int numCommand = 0; //int form of currCommand
+	int numericCommand = 0; //int form of currCommand
 	int lengthCommand = 0; //length of the current command
 
 	string commandType;
@@ -140,7 +140,7 @@ int main()
 	}
 
 	//SORT THROUGH FILE AND ADJUST CODE 
-	//needs optimization in future after gotten working
+	//requires future optimization
 	ifstream file("program.elf", ios::in | ios::binary | ios::ate);
 	if (!file){
 		cout << "Error: program.elf does not exist in the working directory or cannot be opened" << endl;
@@ -149,7 +149,10 @@ int main()
 	else {
 		cout << "program.elf has been opened" << endl;
 
-		//NOTE TO SELF: NOW BEGIN SIFTING THROUGH CODE SEGMENT NOW THAT LIMITS HAVE BEEN FOUND
+		if (endianness == 2) {
+			cout << "Error: Can't handle big endian right now!" << endl;
+			return -1;
+		}
 
 		// load instrucVec with all commands
 		input_eip = beg_code_segment;
@@ -158,77 +161,39 @@ int main()
 		while ((beg_code_segment + offset) < end_code_segment){
 			int new_offset = offset;
 			file.seekg(beg_code_segment + offset);
-			file.read(currCommand, 2);
-
-			numCommand = stringToIntInstruction(currCommand, 2, endianness);
+			file.read(currCommand, 2); //read 2 bytes
 			
-			if (is32Bit(numCommand)){
+			numericCommand = stringToIntInstruction(currCommand, 2, endianness);
+			
+			if (is32Bit(numericCommand)){ 
 				lengthCommand = 4;
 				new_offset += 4;
 				file.read(currCommand + 2, 2);
 				changeEndian(currCommand + 2, 2);
-				numCommand = numCommand << 16;
-				numCommand |= stringToIntInstruction(currCommand + 2, 2, endianness);
+				numericCommand = numericCommand << 16; //shift 16 bits (half-word) to left
+				numericCommand |= stringToIntInstruction(currCommand + 2, 2, endianness);
 			}
 			else{
 				lengthCommand = 2;
 				new_offset += 2;
 			}
-			string stringCommand = int_to_hexString(numCommand, lengthCommand);
+			string stringCommand = int_to_hexString(numericCommand, lengthCommand*2);
 			//create and push instrucs into tempvec
-			commandType = typeOfInstruction(numCommand, lengthCommand);
+			commandType = typeOfInstruction(numericCommand, lengthCommand);
 
 			Instruction currInstruc(commandType, currCommand, lengthCommand);
 			input.push_back(currInstruc);
-			indexMap.insert(make_pair(index, input_eipstarting)); // index, input_eip
+			indexMap.insert(make_pair(index, beg_code_segment + offset)); // index, input_eip
 
 			index++;
 			offset = new_offset;
 		}
-		/*for (int index = 0; input_eip < end_code_segment; index++) //iterate 16bits at a time  index is for matching index and input_eip in indexMap
-		{
-			if (endianness == 2) {
-				cout << "Error: Can't handle big endian right now!" << endl;
-				return -1;
-			}
-
-			//current code inside this loop assumes little endian
-			file.seekg(input_eip);
-			file.read(currCommand, 2); //read first two bytes
-			int input_eipstarting = input_eip; // location of current instruction
-
-			numCommand = stringToIntInstruction(currCommand, 2, endianness);
-
-			if (is32Bit(numCommand)) {//if not true then 32bit instruction, else 16 bit -- checking to see if op1 == 00 (binary)
-				lengthCommand = 32;
-				input_eip += 4;
-				file.read(currCommand + 2, 2); //read next 16 bits  
-				//currCommand[4] = '\0';
-				changeEndian(currCommand + 2, sizeof(currCommand)/sizeof(currCommand[0])); // convert next 16 bits, doesn't work correctly right now
-				numCommand = numCommand << 16;
-				numCommand += stringToIntInstruction(currCommand + 2, sizeof(currCommand)/sizeof(currCommand[0]), '1'); //add on next 16 bits
-			}
-			else
-			{
-				lengthCommand = 16;
-				input_eip += 2;
-			}
-
-			string stringcommand = int_to_hexString(numCommand, lengthCommand / 4);
-
-			//create and push instrucs into tempvec
-			commandType = typeOfInstruction(numCommand, lengthCommand);
-			
-			Instruction currInstruc(commandType, currCommand, lengthCommand);
-			input.push_back(currInstruc);
-			indexMap.insert(make_pair(index, input_eipstarting)); // index, input_eip
-		}*/
-
-
 
 		//reset loop and go through loop again
-		// insert extra branches and space
-		// adjust offsets
+		//insert extra branches and space
+		//adjust offsets
+		//NOTE TO SELF: ADJUST NOW TO WORK FOR BYTE ADDRESSING
+
 		for (int i = 0, input_eip = 0; i < input.size();)
 		{
 			
@@ -241,7 +206,7 @@ int main()
 			{
 				bytesReplaced += 8; //block out 32 bits if invalid
 
-				actual_eip += 8; // this space will be taken by the space instruction (bytesReplaced)
+				actual_eip += 8; //this space will be taken by the space instruction (bytesReplaced)
 				tempVectorIndex++;
 			}
 
