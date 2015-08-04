@@ -14,75 +14,75 @@ ElfHeader::ElfHeader(ifstream* file, int elfHeaderStart, char* buff)
 	//e_entry, offset by 24
 	file->seekg(elfHeaderStart + 24);
 	file->read(buff, sizeof(e_entry));
-	e_entry = stringToIntInstruction(buff, sizeof(e_entry), e_ident[5]);
+	e_entry = stringToNumericInstruction(buff, sizeof(e_entry), e_ident[5]);
 
 	//e_phoff, offset by 28
 	file->seekg(elfHeaderStart + 28);
 	file->read(buff, sizeof(e_phoff));
-	e_phoff = stringToIntInstruction(buff, sizeof(e_phoff), e_ident[5]);
+	e_phoff = stringToNumericInstruction(buff, sizeof(e_phoff), e_ident[5]);
 
 	//e_shoff, offset by 32
 	file->seekg(elfHeaderStart + 32);
 	file->read(buff, sizeof(e_shoff));
-	e_shoff = stringToIntInstruction(buff, sizeof(e_shoff), e_ident[5]);
+	e_shoff = stringToNumericInstruction(buff, sizeof(e_shoff), e_ident[5]);
 
 	//e_phentsize, offset by 42
 	file->seekg(elfHeaderStart + 42);
 	file->read(buff, sizeof(e_phentsize));
-	e_phentsize = stringToIntInstruction(buff, sizeof(e_phentsize), e_ident[5]);
+	e_phentsize = stringToNumericInstruction(buff, sizeof(e_phentsize), e_ident[5]);
 
 	//e_phnum, offset by 44
 	file->seekg(elfHeaderStart + 44);
 	file->read(buff, sizeof(e_phnum));
-	e_phnum = stringToIntInstruction(buff, sizeof(e_phnum), e_ident[5]);
+	e_phnum = stringToNumericInstruction(buff, sizeof(e_phnum), e_ident[5]);
 
 	//e_phnum, offset by 46
 	file->seekg(elfHeaderStart + 46);
 	file->read(buff, sizeof(e_shentsize));
-	e_shentsize = stringToIntInstruction(buff, sizeof(e_shentsize), e_ident[5]);
+	e_shentsize = stringToNumericInstruction(buff, sizeof(e_shentsize), e_ident[5]);
 
 	file->seekg(elfHeaderStart + 48);
 	file->read(buff, sizeof(e_shnum));
-	e_shnum = stringToIntInstruction(buff, sizeof(e_shnum), e_ident[5]);
+	e_shnum = stringToNumericInstruction(buff, sizeof(e_shnum), e_ident[5]);
 }
 
 SectionHeader::SectionHeader(ifstream* file, int sectionHeaderStart, char* buff, char endianness)
 {
 	file->seekg(sectionHeaderStart);
 	file->read(buff, sizeof(wordsh_name));
-	wordsh_name = stringToIntInstruction(buff, sizeof(wordsh_name), endianness);
+	wordsh_name = stringToNumericInstruction(buff, sizeof(wordsh_name), endianness);
 
 	file->seekg(sectionHeaderStart + 4);
 	file->read(buff, sizeof(wordsh_type));
-	wordsh_type = stringToIntInstruction(buff, sizeof(wordsh_type), endianness);
+	wordsh_type = stringToNumericInstruction(buff, sizeof(wordsh_type), endianness);
 
 	file->seekg(sectionHeaderStart + 12);
 	file->read(buff, sizeof(addrsh_addr));
-	addrsh_addr = stringToIntInstruction(buff, sizeof(addrsh_addr), endianness);
+	addrsh_addr = stringToNumericInstruction(buff, sizeof(addrsh_addr), endianness);
 
 	file->seekg(sectionHeaderStart + 16);
 	file->read(buff, sizeof(offsh_offset));
-	offsh_offset = stringToIntInstruction(buff, sizeof(offsh_offset), endianness);
+	offsh_offset = stringToNumericInstruction(buff, sizeof(offsh_offset), endianness);
 
 	file->seekg(sectionHeaderStart + 20);
 	file->read(buff, sizeof(wordsh_size));
-	wordsh_size = stringToIntInstruction(buff, sizeof(wordsh_size), endianness);
+	wordsh_size = stringToNumericInstruction(buff, sizeof(wordsh_size), endianness);
 
 	file->seekg(sectionHeaderStart + 24);
 	file->read(buff, sizeof(wordsh_link));
-	wordsh_link = stringToIntInstruction(buff, sizeof(wordsh_link), endianness);
+	wordsh_link = stringToNumericInstruction(buff, sizeof(wordsh_link), endianness);
 
 	file->seekg(sectionHeaderStart + 28);
 	file->read(buff, sizeof(wordsh_info));
-	wordsh_info = stringToIntInstruction(buff, sizeof(wordsh_info), endianness);
+	wordsh_info = stringToNumericInstruction(buff, sizeof(wordsh_info), endianness);
 
 	file->seekg(sectionHeaderStart + 32);
 	file->read(buff, sizeof(wordsh_addralign));
-	wordsh_addralign = stringToIntInstruction(buff, sizeof(wordsh_addralign), endianness);
+	wordsh_addralign = stringToNumericInstruction(buff, sizeof(wordsh_addralign), endianness);
 
 	file->seekg(sectionHeaderStart + 36);
 	file->read(buff, sizeof(wordsh_entsize));
-	wordsh_entsize = stringToIntInstruction(buff, sizeof(wordsh_entsize), endianness);
+	wordsh_entsize = stringToNumericInstruction(buff, sizeof(wordsh_entsize), endianness);
 }
 
 
@@ -90,33 +90,33 @@ ProgramHeader::ProgramHeader(ifstream* file, int programHeaderStart, char* buff,
 {
 	file->seekg(programHeaderStart);
 	file->read(buff, sizeof(p_type));
-	p_type = stringToIntInstruction(buff, sizeof(p_type), endianness);
+	p_type = stringToNumericInstruction(buff, sizeof(p_type), endianness);
 	
 	file->seekg(programHeaderStart + 4);
 	file->read(buff, sizeof(p_offset));
-	p_offset = stringToIntInstruction(buff, sizeof(p_offset), endianness);
+	p_offset = stringToNumericInstruction(buff, sizeof(p_offset), endianness);
 
 	file->seekg(programHeaderStart + 8);
 	file->read(buff, sizeof(p_vaddr));
-	p_vaddr = stringToIntInstruction(buff, sizeof(p_vaddr), endianness);
+	p_vaddr = stringToNumericInstruction(buff, sizeof(p_vaddr), endianness);
 
 	file->seekg(programHeaderStart + 12);
 	file->read(buff, sizeof(p_padder));
-	p_padder = stringToIntInstruction(buff, sizeof(p_padder), endianness);
+	p_padder = stringToNumericInstruction(buff, sizeof(p_padder), endianness);
 	
 	file->seekg(programHeaderStart + 16);
 	file->read(buff, sizeof(p_filesz));
-	p_filesz = stringToIntInstruction(buff, sizeof(p_filesz), endianness);
+	p_filesz = stringToNumericInstruction(buff, sizeof(p_filesz), endianness);
 	
 	file->seekg(programHeaderStart + 20);
 	file->read(buff, sizeof(p_memsz));
-	p_memsz = stringToIntInstruction(buff, sizeof(p_memsz), endianness);
+	p_memsz = stringToNumericInstruction(buff, sizeof(p_memsz), endianness);
 	
 	file->seekg(programHeaderStart + 24);
 	file->read(buff, sizeof(p_flags));
-	p_flags = stringToIntInstruction(buff, sizeof(p_flags), endianness);
+	p_flags = stringToNumericInstruction(buff, sizeof(p_flags), endianness);
 	
 	file->seekg(programHeaderStart + 28);
 	file->read(buff, sizeof(p_align));
-	p_align = stringToIntInstruction(buff, sizeof(p_align), endianness);
+	p_align = stringToNumericInstruction(buff, sizeof(p_align), endianness);
 }

@@ -23,17 +23,13 @@ Unzip the downloaded folder and run make inside it to get an ELF, bin, and hex
 
 Get QEMU and set it up for ARM Embedded
 --------------------------------------------------
-sudo apt-get install qemu
-#IN PROGRESS
 
-Running QEMU
---------------------------------------------------
-qemu-system-arm -machine none -cpu cortex-m3
-#IN PROGRESS
+
+
 
 Run program
 --------------------------------------------------
-#IN PROGRESS
+
 
 Convert modified ELF to bin
 --------------------------------------------------

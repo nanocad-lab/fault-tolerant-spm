@@ -3,19 +3,18 @@
 #include <iostream>
 
 
-Instruction::Instruction(std::string commandType, char instruction[], int size)
-: m_type(commandType), m_size(size)
+Instruction::Instruction(std::string commandType, char instruction[], int instructionSizeInBytes)
+: m_type(commandType), m_size(instructionSizeInBytes)
 {
-	m_instruction_int = 0;
-	for (int i = 0; i < m_size/8; i++)
-	{
+	m_numeric_instruction = 0;
+
+	for (int i = 0; i < m_size; i++)
 		m_instruction[i] = instruction[i];
-		m_instruction_int = (m_instruction_int << 8) | (0XFF &instruction[i]);
-	}
-	
+
+	m_numeric_instruction = stringToNumericInstruction(instruction, instructionSizeInBytes);
 }
 
-int Instruction::giveInstruction(char* buff) {
+int Instruction::getInstruction(char* buff) {
 	if (buff != nullptr)
 	{
 		for (int i = 0; i < m_size / 8; i++)
@@ -29,7 +28,7 @@ int Instruction::giveInstruction(char* buff) {
 
 void Instruction::updateInstructions(int newinstruction) //incomplete
 {
-	m_instruction_int = newinstruction;
+	m_numeric_instruction = newinstruction;
 	int mask = 0xFF;
 	for (int i = m_size-8; i >= 0; i -= 8)
 	{
@@ -39,7 +38,7 @@ void Instruction::updateInstructions(int newinstruction) //incomplete
 	return;
 }
 
-unsigned int stringToIntInstruction(char* command, int sizeInBytes, char endianness)
+unsigned int stringToNumericInstruction(char* command, int sizeInBytes, char endianness)
 {	
 	if (endianness == 1)//1 corresponds to little endian, 2 corresponds to big endian
 		changeEndian(command, sizeInBytes);
@@ -52,10 +51,10 @@ unsigned int stringToIntInstruction(char* command, int sizeInBytes, char endiann
 	return result;
 }
 
-std::string typeOfInstruction(int instruction, int commandLength)
+std::string typeOfInstruction(int instruction, int size)
 {
 	
-	if (commandLength == 16)
+	if (size == 2) //16-bit instruction
 	{
 		if ((instruction >> 12) == 0XD) //conditional
 		{
@@ -74,7 +73,7 @@ std::string typeOfInstruction(int instruction, int commandLength)
 			return "other";
 		}
 	}
-	else if (commandLength == 32)
+	else if (size == 4) //32-bit instruction
 	{
 		
 		if ((((instruction >> 27) & 0X1F) == 0X1E) && ((instruction & 0XC000) == 0X8000) && ((instruction& 0x1000) >> 12) == 0)

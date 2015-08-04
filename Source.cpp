@@ -6,32 +6,26 @@
 #include <unordered_set>
 #include <set>
 #include <unordered_map>
-#include <fstream> //for addresses.hex - note: if you are only reading, why use fstream instead of ifstream?
+#include <fstream> 
 #include <iostream>
 using namespace std;
 
 int main()
 {
-	/*TODO: ADJUST WHERE LOOPS START AND END TO ONLY FIND ADDRESSES IN THE CODE SEGMENT.
-	Elf part of the code was just written recently by Muzammil to figure out where code segment is.
-	
-	Initial assumption was that there is only code in the file, so the iterator in for loops such as the eip
-	is not the eip of the code but the location of the char in the input file.*/
 
-
-	//ADDRESS PARSING SECTION
+	/*ADDRESS PARSING SECTION*/
+	//May need to update depending on address output format
 
 	//load invalid addresses into unordered set
 	unordered_set<unsigned int> badAddresses;
-
-	cout << "Your working directory is: ";
-	system("cd");
-	cout << endl;
 
 	FILE* addressFile;
 	addressFile = fopen("addresses.txt", "r");
 	if (addressFile == NULL) {
 		cout << "Error: addresses.txt does not exist in the working directory or cannot be opened" << endl;
+		cout << "Your working directory is: ";
+		system("cd");
+		cout << endl;
 		return -1;
 	}
 	cout << "addresses.txt has been opened" << endl;
@@ -41,13 +35,11 @@ int main()
 		int scanVal = fscanf(addressFile, "0x%8c ", addressBuff);
 		string addressString(addressBuff);
 		unsigned int intAddress = (unsigned int) stoul(addressString, nullptr, 16);
-		badAddresses.insert(intAddress);
-
-		/*for (int i = 0; i < 8; i++){
-			cout << addressBuff[i];
+		if ((intAddress < 52) && (intAddress >= 0)){
+			cout << "Cannot move elf header; program cannot be modified" << endl;
+			return -1;
 		}
-		cout << " = " << intAddress << endl;
-		*/
+		badAddresses.insert(intAddress);
 	}
 
 	cout << "Addresses successfully loaded" << endl;
@@ -59,23 +51,18 @@ int main()
 	cout << "addresses.txt has been closed\n" << endl;;
 
 
-	//INSTRUCTION PARSING SECTION
+
+
+	/*INSTRUCTION PARSING SECTION*/
+	//May need to update for .axf which is given by Keil
 
 	int input_eip = 0;
 	int actual_eip = 0;
-	char* currCommand = new char[5]; //arbitrary 5? or what
-	int numericCommand = 0; //int form of currCommand
-	int lengthCommand = 0; //length of the current command
+	char* currInstruction = new char[5];
+	char* elfBuff = new char[5];
+	int numericInstruction = 0; //int form of currInstruction
+	int commandLengthInBytes = 0; //length of the current command
 
-	string commandType;
-	unordered_map<int, int> indexMap; // index of input, input_eip
-	unordered_map<int, int>	outputindexMap; //  index of output, actual_eip
-	unordered_map<int, int> addressMap; // input_eip, actual_eip
-	unordered_map<int, int> reverseaddressMap; // actual_eip, input_eip
-	vector<Instruction> input;
-	vector<Instruction> output;
-	char zeroes[4] = { 0, 0, 0, 0};
-	Instruction space("space", zeroes, 16);
 	char endianness;
 
 	vector<ProgramHeader> programHeaderTable;
@@ -92,7 +79,7 @@ int main()
 	}
 	else {
 		cout << "program.elf has been opened" << endl;
-		ElfHeader elfHeader(&fileset, 0, currCommand);
+		ElfHeader elfHeader(&fileset, 0, elfBuff);
 		endianness = elfHeader.e_ident[5];
 
 		beg_code_segment = elfHeader.e_entry;
@@ -107,11 +94,11 @@ int main()
 		if (progHdrReadAddr != 0) { //if e_phnum is 0, then e_phoffm must also be 0
 			for (int i = 0; i < elfHeader.e_phnum; i++)
 			{
-				ProgramHeader programHeader(&fileset, progHdrReadAddr, currCommand, endianness);
+				ProgramHeader programHeader(&fileset, progHdrReadAddr, elfBuff, endianness);
 				programHeaderTable.push_back(programHeader);
 				progHdrReadAddr += elfHeader.e_phentsize;
 			}
-			end_code_segment = beg_code_segment + programHeaderTable.at(0).p_memsz;
+			end_code_segment = beg_code_segment + programHeaderTable.at(0).p_memsz; //THIS IS NOT ALWAYS THE CASE IN .AXF FILES! HOW TO DETECT END OF CODE SECTION???
 			cout << "Program headers loaded" << endl;
 			cout << "There are " << dec << programHeaderTable.size() << " entries in the program header table" << endl;
 		}
@@ -126,7 +113,7 @@ int main()
 		if (sectReadAddr != 0) { //if e_shnum is 0, then e_shoff must also be 0
 			for (int i = 0; i < elfHeader.e_shnum; i++)
 			{
-				SectionHeader section(&fileset, sectReadAddr, currCommand, endianness);
+				SectionHeader section(&fileset, sectReadAddr, elfBuff, endianness);
 				sectionHeaderTable.push_back(section);
 				sectReadAddr += elfHeader.e_shentsize;
 			}
@@ -138,9 +125,21 @@ int main()
 		fileset.close();
 		cout << "program.elf has been closed\n" << endl;
 	}
+	delete[] elfBuff;
 
-	//SORT THROUGH FILE AND ADJUST CODE 
-	//requires future optimization
+	/*Begin sorting through file and adjust code*/
+
+	string instructionType;
+	unordered_map<int, int> indexMap; // index of input, input_eip
+	unordered_map<int, int>	outputindexMap; //  index of output, actual_eip
+	unordered_map<int, int> addressMap; // input_eip, actual_eip
+	unordered_map<int, int> reverseaddressMap; // actual_eip, input_eip
+	vector<Instruction> input;
+	vector<Instruction> output;
+	char zeroes[4] = { 0, 0, 0, 0 };
+	Instruction FourByteNoOp("FourByteNoOp", zeroes, 4);
+	Instruction TwoByteNoOp("TwoByteNoOp", zeroes, 2);
+	//load all instructions into data structures
 	ifstream file("program.elf", ios::in | ios::binary | ios::ate);
 	if (!file){
 		cout << "Error: program.elf does not exist in the working directory or cannot be opened" << endl;
@@ -161,27 +160,27 @@ int main()
 		while ((beg_code_segment + offset) < end_code_segment){
 			int new_offset = offset;
 			file.seekg(beg_code_segment + offset);
-			file.read(currCommand, 2); //read 2 bytes
+			file.read(currInstruction, 2); //read 2 bytes
 			
-			numericCommand = stringToIntInstruction(currCommand, 2, endianness);
+			numericInstruction = stringToNumericInstruction(currInstruction, 2, endianness);
 			
-			if (is32Bit(numericCommand)){ 
-				lengthCommand = 4;
+			if (is32Bit(numericInstruction)){ 
+				commandLengthInBytes = 4;
 				new_offset += 4;
-				file.read(currCommand + 2, 2);
-				changeEndian(currCommand + 2, 2);
-				numericCommand = numericCommand << 16; //shift 16 bits (half-word) to left
-				numericCommand |= stringToIntInstruction(currCommand + 2, 2, endianness);
+				file.read(currInstruction + 2, 2);
+				changeEndian(currInstruction + 2, 2);
+				numericInstruction = numericInstruction << 16; //shift 16 bits (half-word) to left
+				numericInstruction |= stringToNumericInstruction(currInstruction + 2, 2, endianness);
 			}
 			else{
-				lengthCommand = 2;
+				commandLengthInBytes = 2;
 				new_offset += 2;
 			}
-			string stringCommand = int_to_hexString(numericCommand, lengthCommand*2);
+			string stringCommand = int_to_hexString(numericInstruction, commandLengthInBytes*2);
 			//create and push instrucs into tempvec
-			commandType = typeOfInstruction(numericCommand, lengthCommand);
+			instructionType = typeOfInstruction(numericInstruction, commandLengthInBytes);
 
-			Instruction currInstruc(commandType, currCommand, lengthCommand);
+			Instruction currInstruc(instructionType, currInstruction, commandLengthInBytes);
 			input.push_back(currInstruc);
 			indexMap.insert(make_pair(index, beg_code_segment + offset)); // index, input_eip
 
@@ -189,16 +188,28 @@ int main()
 			offset = new_offset;
 		}
 
+
 		//reset loop and go through loop again
 		//insert extra branches and space
 		//adjust offsets
-		//NOTE TO SELF: ADJUST NOW TO WORK FOR BYTE ADDRESSING
+		//NOTE TO SELF: ADJUST NOW TO WORK FOR BYTE ADDRESSING //perhaps could rename input?
+		
 
-		for (int i = 0, input_eip = 0; i < input.size();)
+		
+		offset = 0;
+		index = 0;
+		while ((beg_code_segment + offset) < end_code_segment){
+			int instructionLength = input[index].size(); //this is in bytes
+			int newoffset = offset + instructionLength;
+			offset++;
+		}
+
+		//REWRITE
+
+		for (int i = 0, input_eip = beg_code_segment; i < input.size();)
 		{
-			
-			int instrucLength = input[i].length();
-			input_eip += instrucLength / 8;
+			int instrucLength = input[i].size();
+			input_eip += instrucLength;
 			int startingeip = actual_eip;
 			int tempVectorIndex = i;
 			int bytesReplaced = 0;
@@ -231,7 +242,7 @@ int main()
 
 				for (int a = 0; a < bytesReplaced / 4; a += 1)
 				{
-					output.push_back(space);
+					output.push_back(FourByteNoOp);
 				}
 
 				for (int j = 0; j < bytesReplaced;)
@@ -243,8 +254,8 @@ int main()
 					addressMap.insert(make_pair(input_eip, actual_eip));
 					reverseaddressMap.insert(make_pair(actual_eip, input_eip));
 					outputindexMap.insert(make_pair(output.size()-1, actual_eip)); //index, actual_eip
-					actual_eip += input[i].length() / 8;
-					j += input[i].length() / 8;
+					actual_eip += input[i].size() / 8;
+					j += input[i].size() / 8;
 					i++;
 				}
 				bytesReplaced = 0;
@@ -259,7 +270,7 @@ int main()
 				addressMap.insert(make_pair(input_eip, actual_eip));
 				reverseaddressMap.insert(make_pair(actual_eip, input_eip));
 				outputindexMap.insert(make_pair(output.size() - 1, actual_eip)); //index, actual_eip
-				actual_eip += input[i].length()/8;
+				actual_eip += input[i].size()/8;
 				i++;
 			}
 		}
@@ -271,7 +282,7 @@ int main()
 
 			if (output[n].type().find("branch16conditional") != string::npos)
 			{
-				int oldinstruction = output[n].giveInstructionInt();
+				int oldinstruction = output[n].getNumericInstruction();
 				int tempImm = signExtend32((oldinstruction & 0XFF), 8); 
 				tempImm = (tempImm ) << 1;
 				int curraddress = outputindexMap.find(n)->second; // gives address of this in output file   
@@ -294,7 +305,7 @@ int main()
 			}
 			else if (output[n].type().find("branch16unconditional") != string::npos)
 			{
-				int oldinstruction = output[n].giveInstructionInt();
+				int oldinstruction = output[n].getNumericInstruction();
 				int tempImm = signExtend32((oldinstruction & 0X7FF), 11); 
 				tempImm = tempImm << 1;
 				int curraddress = outputindexMap.find(n)->second; // gives address of this in output file   
@@ -315,7 +326,7 @@ int main()
 			}
 			else if (output[n].type().find("branch32conditional") != string::npos) 
 			{
-				int oldinstruction = output[n].giveInstructionInt();
+				int oldinstruction = output[n].getNumericInstruction();
 				int S = (oldinstruction & 0X4000000) >> 26;
 				int J1 = (oldinstruction & 0X2000) >> 13;
 				int J2 = (oldinstruction & 0x800) >> 11;
@@ -352,7 +363,7 @@ int main()
 			}
 			else if (output[n].type().find("branch32unconditional") != string::npos)
 			{
-				int oldinstruction = output[n].giveInstructionInt();
+				int oldinstruction = output[n].getNumericInstruction();
 				int S = (oldinstruction & 0X4000000) >> 26;
 				int J1 = (oldinstruction & 0X2000) >> 13;
 				int J2 = (oldinstruction & 0x800) >> 11;
@@ -391,7 +402,7 @@ int main()
 			}
 			else if (output[n].type().find("branch32L") != string::npos) // seems to have same offset as b-unconditional
 			{
-				int oldinstruction = output[n].giveInstructionInt();
+				int oldinstruction = output[n].getNumericInstruction();
 				int S = (oldinstruction & 0X4000000) >> 26;
 				int J1 = (oldinstruction & 0X2000) >> 13;
 				int J2 = (oldinstruction & 0x800) >> 11;
@@ -429,6 +440,7 @@ int main()
 			{
 			}
 		}
+		
 
 
 		//output results to file
@@ -439,10 +451,10 @@ int main()
 		int lineCount = 1;
 		for (int k = 0; k < output.size(); k++)   
 		{
-			output[k].giveInstruction(buff);
+			output[k].getInstruction(buff);
 			changeEndian(buff, sizeof(buff)/sizeof(buff[0]));
 
-			if (output[k].length() == 16)
+			if (output[k].size() == 16)
 			{
 				outfile.write(buff, 2);
 			}
@@ -459,10 +471,9 @@ int main()
 	}
 
 	//clean up
-	delete[] currCommand;
+	delete[] currInstruction;
 	file.close();
 	cout << "program.elf has been closed\n" << endl;
 
 	cout << "Done" << endl;
-
 }
