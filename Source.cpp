@@ -129,6 +129,9 @@ int main()
 
 	/*Begin sorting through file and adjust code*/
 
+
+	//temp: EDIT SECTION BELOW FOR INSTRUCTIONS TO STORE THE ACTUAL ADDRESS
+
 	string instructionType;
 	unordered_map<int, int> indexMap; // index of input, input_eip
 	unordered_map<int, int>	outputindexMap; //  index of output, actual_eip
