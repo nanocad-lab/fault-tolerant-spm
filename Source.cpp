@@ -24,7 +24,7 @@ int main()
 	if (addressFile == NULL) {
 		cout << "Error: addresses.txt does not exist in the working directory or cannot be opened" << endl;
 		cout << "Your working directory is: ";
-		system("cd");
+		system("cd"); //doesn't seem to work on Linux for whatever reason
 		cout << endl;
 		return -1;
 	}
@@ -51,16 +51,11 @@ int main()
 	cout << "addresses.txt has been closed\n" << endl;;
 
 
-
-
-	/*INSTRUCTION PARSING SECTION*/
-	//May need to update for .axf which is given by Keil
-
 	int input_eip = 0;
 	int actual_eip = 0;
 	char* currInstruction = new char[5];
 	char* elfBuff = new char[5];
-	int numericInstruction = 0; //int form of currInstruction
+	unsigned int numericInstruction = 0; //int form of currInstruction
 	int commandLengthInBytes = 0; //length of the current command
 
 	char endianness;
@@ -82,9 +77,10 @@ int main()
 		ElfHeader elfHeader(&fileset, 0, elfBuff);
 		endianness = elfHeader.e_ident[5];
 
-		beg_code_segment = elfHeader.e_entry;
+		beg_code_segment = elfHeader.e_entry; //this is the address where code execution will begin
 		cout << showbase;
 		cout << "entry point address: " << hex << beg_code_segment << endl;
+
 
 		//create program header and fill it in
 		unsigned int progHdrReadAddr = elfHeader.e_phoff;
@@ -98,14 +94,16 @@ int main()
 				programHeaderTable.push_back(programHeader);
 				progHdrReadAddr += elfHeader.e_phentsize;
 			}
-			end_code_segment = beg_code_segment + programHeaderTable.at(0).p_memsz; //THIS IS NOT ALWAYS THE CASE IN .AXF FILES! HOW TO DETECT END OF CODE SECTION???
+			end_code_segment = beg_code_segment + programHeaderTable.at(0).p_memsz; //first program section is code section
 			cout << "Program headers loaded" << endl;
 			cout << "There are " << dec << programHeaderTable.size() << " entries in the program header table" << endl;
 		}
 		else
 			cout << "Warning: No program header table exists" << endl;
 
+
 		//create section header and fill it in
+		//note: section header is supposedly only used for linking, not sure if necessary to edit but loaded anyways
 		unsigned int sectReadAddr = elfHeader.e_shoff;
 		cout << "Section header table starts at " << hex << sectReadAddr << endl;
 		cout << "Section header size is " << dec << elfHeader.e_shentsize << " bytes" << endl;
@@ -127,19 +125,9 @@ int main()
 	}
 	delete[] elfBuff;
 
-	/*Begin sorting through file and adjust code*/
-
-	string instructionType;
-	unordered_map<int, int> indexMap; // index of input, input_eip
-	unordered_map<int, int>	outputindexMap; //  index of output, actual_eip
-	unordered_map<int, int> addressMap; // input_eip, actual_eip
-	unordered_map<int, int> reverseaddressMap; // actual_eip, input_eip
-	vector<Instruction> input;
-	vector<Instruction> output;
-	char zeroes[4] = { 0, 0, 0, 0 };
-	Instruction FourByteNoOp("FourByteNoOp", zeroes, 4);
-	Instruction TwoByteNoOp("TwoByteNoOp", zeroes, 2);
+	
 	//load all instructions into data structures
+	vector<Instruction> instructionsVec;
 	ifstream file("program.elf", ios::in | ios::binary | ios::ate);
 	if (!file){
 		cout << "Error: program.elf does not exist in the working directory or cannot be opened" << endl;
@@ -153,18 +141,20 @@ int main()
 			return -1;
 		}
 
-		// load instrucVec with all commands
+		// load instrucVec with all instructions
 		input_eip = beg_code_segment;
 		int offset = 0;
-		int index = 0;
+		unsigned int addressInMemory = beg_code_segment;
 		while ((beg_code_segment + offset) < end_code_segment){
 			int new_offset = offset;
 			file.seekg(beg_code_segment + offset);
 			file.read(currInstruction, 2); //read 2 bytes
-			
+
 			numericInstruction = stringToNumericInstruction(currInstruction, 2, endianness);
-			
-			if (is32Bit(numericInstruction)){ 
+
+			addressInMemory = beg_code_segment + offset;
+
+			if (is32Bit(numericInstruction)){
 				commandLengthInBytes = 4;
 				new_offset += 4;
 				file.read(currInstruction + 2, 2);
@@ -176,6 +166,14 @@ int main()
 				commandLengthInBytes = 2;
 				new_offset += 2;
 			}
+
+			Instruction currInstruction(numericInstruction, commandLengthInBytes, addressInMemory);
+
+			offset = new_offset;
+
+			instructionsVec.push_back(currInstruction);
+			/*
+			int index = 0;
 			string stringCommand = int_to_hexString(numericInstruction, commandLengthInBytes*2);
 			//create and push instrucs into tempvec
 			instructionType = typeOfInstruction(numericInstruction, commandLengthInBytes);
@@ -186,16 +184,11 @@ int main()
 
 			index++;
 			offset = new_offset;
+			*/
 		}
-
-
-		//reset loop and go through loop again
-		//insert extra branches and space
-		//adjust offsets
-		//NOTE TO SELF: ADJUST NOW TO WORK FOR BYTE ADDRESSING //perhaps could rename input?
+	}
 		
-
-		
+		/*
 		offset = 0;
 		index = 0;
 		while ((beg_code_segment + offset) < end_code_segment){
@@ -203,8 +196,6 @@ int main()
 			int newoffset = offset + instructionLength;
 			offset++;
 		}
-
-		//REWRITE
 
 		for (int i = 0, input_eip = beg_code_segment; i < input.size();)
 		{
@@ -442,7 +433,6 @@ int main()
 		}
 		
 
-
 		//output results to file
 		ofstream outfile("newprogram.elf", ofstream::binary);
 		cout << "newprogram.elf is being written to" << endl;
@@ -469,6 +459,7 @@ int main()
 		outfile.close();
 		cout << "newprogram.elf has been closed" << endl;
 	}
+	*/
 
 	//clean up
 	delete[] currInstruction;

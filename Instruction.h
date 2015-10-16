@@ -6,17 +6,19 @@
 class Instruction
 {
 public:
-	Instruction(std::string commandType, char instruction [], int instructionSize);
+	Instruction(unsigned int instruction, int instructionSizeInBytes, unsigned int addressInMemory);
 	int size() { return m_size;}
 	std::string type() { return m_type; }
-	int getInstruction(char* buff);
-	int getNumericInstruction(){ return m_numeric_instruction; }
+	unsigned int getInstruction(char* buff);
+	unsigned int getNumericInstruction(){ return m_numeric_instruction; }
 	void updateInstructions(int newinstruction);
 private:
 	std::string m_type;
 	char m_instruction [4];
 	int m_numeric_instruction;
 	int m_size;
+	int m_address;
+	unsigned int m_opcode;
 };
 
 unsigned int stringToNumericInstruction(char* command, int sizeInBytes, char endianness = 1); //assume little endian
