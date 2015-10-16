@@ -125,7 +125,7 @@ int main()
 	}
 	delete[] elfBuff;
 
-	
+
 	//load all instructions into data structures
 	vector<Instruction> instructionsVec;
 	ifstream file("program.elf", ios::in | ios::binary | ios::ate);
