@@ -8,37 +8,52 @@
 #include <unordered_map>
 #include <fstream> 
 #include <iostream>
+#include <stdint.h>
 using namespace std;
 
 int main()
 {
+	/* Entire code could be made more clear by: 
+	 * 1) Using the stdint.h typedefs
+	 * 2) Separating the numbered code sections below into functions for readability
+	 * 
+	 * The whole "numericInstruction" thing may be a bit of a misnomer, it just stores the bit representation of the instruction directly into memory
+	 * which isn't really a "number"
+	 */
+	
 
-	/*ADDRESS PARSING SECTION*/
-	//May need to update depending on address output format
+	/* SECTION 1: ADDRESS PARSING SECTION
+	 * Addresses.txt is a text file with hex representations of 32-bit addresses.
+	 * Each 32-bit address is 8 hex characters prefixed by 0x.
+	 * Each address is separated from other addresses by newlines or whitespaces. 
+	 * e.g., when Addresses.txt is opened by notepad, it will show:
+	 * 0x040302AF
+	 * 0x28EA1423
+	 * 0x00FF0243
+	 */
 
-	//load invalid addresses into unordered set
-	unordered_set<unsigned int> badAddresses;
-
+	/* Open addresses.txt */
 	FILE* addressFile;
 	addressFile = fopen("addresses.txt", "r");
 	if (addressFile == NULL) {
 		cout << "Error: addresses.txt does not exist in the working directory or cannot be opened" << endl;
 		cout << "Your working directory is: ";
-		system("cd"); //doesn't seem to work on Linux for whatever reason
+		system("cd"); //does not work on Linux
 		cout << endl;
 		return -1;
 	}
 	cout << "addresses.txt has been opened" << endl;
+
+	/* Load from addresses.txt into badAddresses*/
+	unordered_set<unsigned int> badAddresses;
 	char* addressBuff = new char[8];
+
 	cout << "Loading addresses" << endl;
 	while (!feof(addressFile)){
 		int scanVal = fscanf(addressFile, "0x%8c ", addressBuff);
 		string addressString(addressBuff);
 		unsigned int intAddress = (unsigned int) stoul(addressString, nullptr, 16);
-		if ((intAddress < 52) && (intAddress >= 0)){
-			cout << "Cannot move elf header; program cannot be modified" << endl;
-			return -1;
-		}
+
 		badAddresses.insert(intAddress);
 	}
 
@@ -51,11 +66,27 @@ int main()
 	cout << "addresses.txt has been closed\n" << endl;;
 
 
+	/* SECTION 2: ELF PARSING SECTION 
+	 * This section reads in the generated ELF file from running arm-none-eabi-gcc.
+	 * 
+	 * The ELF Header is read in and the pertinent information used to find addresses of the Program Header Table and Section Header Table.
+	 * Afterwards, the ELF Header info is disposed of other than information such as the code entry point and the executable's endianness.
+	 * 
+	 * The Program Header Table is the most useful to us since it holds Program Headers which tell us the location of the .text (aka Code) segment,
+	 * Data (initialized variables, etc) segment, and .bss segment (uninitialized variables).
+	 *
+	 * The Section Header Table is probably less useful, since it is typically only during linking and compiling.
+	 * 
+	 * Side note about endianness:
+	 * In normal situations, the ELF file is the same endianness as the target machine.
+	 * ARM specifications store instructions as little endian, but device memory may be either. (The LPC1768 is little endian)
+	 */
+
 	int input_eip = 0;
 	int actual_eip = 0;
 	char* currInstruction = new char[5];
 	char* elfBuff = new char[5];
-	unsigned int numericInstruction = 0; //int form of currInstruction
+	unsigned int numericInstruction = 0; //32-bit form of currInstruction
 	int commandLengthInBytes = 0; //length of the current command
 
 	char endianness;
@@ -65,6 +96,7 @@ int main()
 
 	unsigned int beg_code_segment;
 	unsigned int end_code_segment;
+	unsigned int code_entry_address;
 
 	//load values for ELF variables, load all section headers and program headers
 	ifstream fileset("program.elf", ios::in | ios::binary | ios::ate);
@@ -77,12 +109,11 @@ int main()
 		ElfHeader elfHeader(&fileset, 0, elfBuff);
 		endianness = elfHeader.e_ident[5];
 
-		beg_code_segment = elfHeader.e_entry; //this is the address where code execution will begin
+		code_entry_address = elfHeader.e_entry; //the address where code execution will begin
 		cout << showbase;
-		cout << "entry point address: " << hex << beg_code_segment << endl;
+		cout << "entry point address: " << hex << code_entry_address << endl;
 
-
-		//create program header and fill it in
+		//load all of the program headers into programHeaderTable data structure
 		unsigned int progHdrReadAddr = elfHeader.e_phoff;
 		cout << "Program header table starts at " << hex << progHdrReadAddr << endl;
 		cout << "Program header size is " << dec << elfHeader.e_phentsize << " bytes" << endl;
@@ -94,6 +125,7 @@ int main()
 				programHeaderTable.push_back(programHeader);
 				progHdrReadAddr += elfHeader.e_phentsize;
 			}
+			beg_code_segment = programHeaderTable.at(0).p_paddr + programHeaderTable.at(0).p_offset; //fairly certain this is correct
 			end_code_segment = beg_code_segment + programHeaderTable.at(0).p_memsz; //first program section is code section
 			cout << "Program headers loaded" << endl;
 			cout << "There are " << dec << programHeaderTable.size() << " entries in the program header table" << endl;
@@ -101,9 +133,7 @@ int main()
 		else
 			cout << "Warning: No program header table exists" << endl;
 
-
-		//create section header and fill it in
-		//note: section header is supposedly only used for linking, not sure if necessary to edit but loaded anyways
+		//load all of the section headers into sectionHeaderTable data structure
 		unsigned int sectReadAddr = elfHeader.e_shoff;
 		cout << "Section header table starts at " << hex << sectReadAddr << endl;
 		cout << "Section header size is " << dec << elfHeader.e_shentsize << " bytes" << endl;
@@ -126,8 +156,23 @@ int main()
 	delete[] elfBuff;
 
 
+	/* Might need a check here for if ELF Header is mapped into memory at a bad address.
+	 * I'm not sure if the ELF Header is stripped in the conversion from ELF to BIN.
+	 */
+
+
+
+	/* SECTION 3: INSTRUCTIONS LOADING SECTION
+	 * This section of code loads the instructions from the .text segment into an Instruction vector, which will later be adjusted.
+	 * I parse instructions in the ELF file from beg_code_segment to end_code_segment.
+	 * This means ARM environment variables are read in since those are located ahead of the code entry point.
+	 *
+	 * code_entry_address variable holds the actual address in memory of the entry point, beg_code_segment and end_code_segments are locations in
+	 * the ELF file.
+	 */
+
 	//load all instructions into data structures
-	vector<Instruction> instructionsVec;
+	vector<Instruction> instructionsVector;
 	ifstream file("program.elf", ios::in | ios::binary | ios::ate);
 	if (!file){
 		cout << "Error: program.elf does not exist in the working directory or cannot be opened" << endl;
@@ -137,26 +182,31 @@ int main()
 		cout << "program.elf has been opened" << endl;
 
 		if (endianness == 2) {
-			cout << "Error: Can't handle big endian right now!" << endl;
+			cout << "Error: Can't handle big endian right now." << endl;
 			return -1;
 		}
 
 		// load instrucVec with all instructions
-		input_eip = beg_code_segment;
-		int offset = 0;
+		// input_eip = beg_code_segment;
+		int mem_offset = 0;
 		unsigned int addressInMemory = beg_code_segment;
-		while ((beg_code_segment + offset) < end_code_segment){
-			int new_offset = offset;
-			file.seekg(beg_code_segment + offset);
+		while ((beg_code_segment + mem_offset) < end_code_segment){
+			int new_mem_offset = mem_offset;
+			file.seekg(beg_code_segment + mem_offset);
 			file.read(currInstruction, 2); //read 2 bytes
 
 			numericInstruction = stringToNumericInstruction(currInstruction, 2, endianness);
 
-			addressInMemory = beg_code_segment + offset;
+			addressInMemory = beg_code_segment + mem_offset;
+
+
+			/* If the address read in is found to be 32 - bits, read in a 32 - bit instruction and move on to the instruction 4 - bytes over
+			 * Otherwise if the address read in is found to be 16 - bits, read in the 16 - bit instruction and move on to the instruction 2 - bytes over
+			 */
 
 			if (is32Bit(numericInstruction)){
 				commandLengthInBytes = 4;
-				new_offset += 4;
+				new_mem_offset += 4;
 				file.read(currInstruction + 2, 2);
 				changeEndian(currInstruction + 2, 2);
 				numericInstruction = numericInstruction << 16; //shift 16 bits (half-word) to left
@@ -164,14 +214,16 @@ int main()
 			}
 			else{
 				commandLengthInBytes = 2;
-				new_offset += 2;
+				new_mem_offset += 2;
 			}
 
 			Instruction currInstruction(numericInstruction, commandLengthInBytes, addressInMemory);
 
-			offset = new_offset;
+			mem_offset = new_mem_offset;
 
-			instructionsVec.push_back(currInstruction);
+			instructionsVector.push_back(currInstruction);
+
+			/* Leftover mapping stuff from before -- was clunky and too confusing*/
 			/*
 			int index = 0;
 			string stringCommand = int_to_hexString(numericInstruction, commandLengthInBytes*2);
@@ -187,6 +239,29 @@ int main()
 			*/
 		}
 	}
+
+	/* TO-DO Sections Below
+	 */
+
+	/* CODE SECTION 4: INSTRUCTIONS ADJUSTMENT SECTION
+	 *
+	 * Originally there was a whole mapping scheme going on here. My last version had three loops:
+	 * The first loop went linearly through the entire instructionsVector and inserted noops
+	 * The second loop went through and updated instructions based on a referenced instruction
+	 *		e.g. inside Instruction A, there is a pointer to Instruction B
+	 *			if Instruction A is going to jump to Instruction B and Instruction B's memory location has changed, then
+	 *			Instruction A's bit representation will be changed to jump to the new location of Instruction B
+	 * 
+	 * Suggestion from Mark: Organize by logical blocks, where each logical block ends with a jump or branch
+	 */
+
+	/* CODE SECTION 5: Rebuild the ELF File
+	 * Section needs to be redon
+	 * Didn't get to this section, needs to be redone.
+	 */
+
+
+
 		
 		/*
 		offset = 0;
@@ -460,7 +535,8 @@ int main()
 		cout << "newprogram.elf has been closed" << endl;
 	}
 	*/
-
+	
+	
 	//clean up
 	delete[] currInstruction;
 	file.close();

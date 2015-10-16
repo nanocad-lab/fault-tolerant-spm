@@ -6,7 +6,8 @@
 Instruction::Instruction(unsigned int instruction, int instructionSizeInBytes, unsigned int addressInMemory)
 	: m_numeric_instruction(instruction), m_size(instructionSizeInBytes), m_address(addressInMemory)
 {
-	//need to set m_opcode
+	referencedInstruction = nullptr;
+	//m_opcode = typeOfInstruction(instruction, instructionSizeInBytes)?
 }
 
 unsigned int Instruction::getInstruction(char* buff) {
@@ -46,7 +47,7 @@ unsigned int stringToNumericInstruction(char* command, int sizeInBytes, char end
 	return result;
 }
 
-std::string typeOfInstruction(int instruction, int size)
+std::string typeOfInstruction(int instruction, int sizeInBytes)
 {
 	//not working, check by opcode
 	return "NOT WORKING";

@@ -101,8 +101,8 @@ ProgramHeader::ProgramHeader(ifstream* file, int programHeaderStart, char* buff,
 	p_vaddr = stringToNumericInstruction(buff, sizeof(p_vaddr), endianness);
 
 	file->seekg(programHeaderStart + 12);
-	file->read(buff, sizeof(p_padder));
-	p_padder = stringToNumericInstruction(buff, sizeof(p_padder), endianness);
+	file->read(buff, sizeof(p_paddr));
+	p_paddr = stringToNumericInstruction(buff, sizeof(p_paddr), endianness);
 	
 	file->seekg(programHeaderStart + 16);
 	file->read(buff, sizeof(p_filesz));

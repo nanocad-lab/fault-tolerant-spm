@@ -1,9 +1,8 @@
 #ifndef ELF_INCLUDED
 #define ELF_INCLUDED
 
-#include <stdint.h> //for exact specified sizes
+#include <stdint.h>
 #include <fstream>
-//#include <iostream>
 
 using namespace std;
 
@@ -47,7 +46,7 @@ struct ProgramHeader
 	unsigned int p_type;
 	unsigned int p_offset;
 	unsigned int p_vaddr;
-	unsigned int p_padder;
+	unsigned int p_paddr;
 	unsigned int p_filesz;
 	unsigned int p_memsz;
 	unsigned int p_flags;
