@@ -1,7 +1,9 @@
-#include "Instruction.h"
-#include "MiscFuncs.h"
+//C libraries
 #include <iostream>
 
+//user defined
+#include "Instruction.h"
+#include "MiscFuncs.h"
 
 Instruction::Instruction(unsigned int instruction, int instructionSizeInBytes, unsigned int addressInMemory)
 	: m_numeric_instruction(instruction), m_size(instructionSizeInBytes), m_address(addressInMemory)

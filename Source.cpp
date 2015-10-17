@@ -1,6 +1,4 @@
-#include "Instruction.h"
-#include "MiscFuncs.h"
-#include "ELF.h"
+//C Libraries
 #include <vector>
 #include <string>
 #include <unordered_set>
@@ -9,23 +7,35 @@
 #include <fstream> 
 #include <iostream>
 #include <stdint.h>
+
+//user defined
+#include "Instruction.h"
+#include "MiscFuncs.h"
+#include "ELF.h"
+
 using namespace std;
 
 int main()
 {
 	/* Entire code could be made more clear by: 
 	 * 1) Using the stdint.h typedefs
-	 * 2) Separating the numbered code sections below into functions for readability
+	 * 2) Separating the numbered code sections below into functions for 
+	 * readability
 	 * 
-	 * The whole "numericInstruction" thing may be a bit of a misnomer, it just stores the bit representation of the instruction directly into memory
-	 * which isn't really a "number"
+	 * The whole "numericInstruction" thing may be a bit of a misnomer, it 
+	 * just stores the bit representation of the instruction directly into 
+	 * memory which isn't really a "number" per se
 	 */
 	
 
 	/* SECTION 1: ADDRESS PARSING SECTION
-	 * Addresses.txt is a text file with hex representations of 32-bit addresses.
+	 * Addresses.txt is a text file with hex representations of 32-bit 
+	 * addresses.
+	 *
 	 * Each 32-bit address is 8 hex characters prefixed by 0x.
-	 * Each address is separated from other addresses by newlines or whitespaces. 
+	 * Each address is separated from other addresses by newlines or 
+	 * whitespaces. 
+	 * 
 	 * e.g., when Addresses.txt is opened by notepad, it will show:
 	 * 0x040302AF
 	 * 0x28EA1423
@@ -67,19 +77,28 @@ int main()
 
 
 	/* SECTION 2: ELF PARSING SECTION 
-	 * This section reads in the generated ELF file from running arm-none-eabi-gcc.
+	 * This section reads in the generated ELF file from running 
+	 * arm-none-eabi-gcc.
 	 * 
-	 * The ELF Header is read in and the pertinent information used to find addresses of the Program Header Table and Section Header Table.
-	 * Afterwards, the ELF Header info is disposed of other than information such as the code entry point and the executable's endianness.
+	 * The ELF Header is read in and the pertinent information used to 
+	 * find addresses of the Program Header Table and Section Header Table.
+	 * Afterwards, the ELF Header info is disposed of other than 
+	 * information such as the code entry point and the executable's 
+	 * endianness.
 	 * 
-	 * The Program Header Table is the most useful to us since it holds Program Headers which tell us the location of the .text (aka Code) segment,
-	 * Data (initialized variables, etc) segment, and .bss segment (uninitialized variables).
+	 * The Program Header Table is the most useful to us since it holds 
+	 * Program Headers which tell us the location of the .text (aka Code) 
+	 * segment, Data (initialized variables, etc) segment, and .bss 
+	 * segment (uninitialized variables).
 	 *
-	 * The Section Header Table is probably less useful, since it is typically only during linking and compiling.
+	 * The Section Header Table is probably less useful, since it is 
+	 * typically only during linking and compiling.
 	 * 
 	 * Side note about endianness:
-	 * In normal situations, the ELF file is the same endianness as the target machine.
-	 * ARM specifications store instructions as little endian, but device memory may be either. (The LPC1768 is little endian)
+	 * In normal situations, the ELF file is the same endianness as the 
+	 * target machine.
+	 * ARM specifications store instructions as little endian, but device 
+	 * memory may be either. (The LPC1768 is little endian)
 	 */
 
 	int input_eip = 0;
@@ -156,19 +175,25 @@ int main()
 	delete[] elfBuff;
 
 
-	/* Might need a check here for if ELF Header is mapped into memory at a bad address.
-	 * I'm not sure if the ELF Header is stripped in the conversion from ELF to BIN.
+	/* Might need a check here for if ELF Header is mapped into memory at 
+	 * a bad address.
+	 * I'm not sure if the ELF Header is stripped in the conversion from 
+	 * ELF to BIN.
 	 */
 
 
 
 	/* SECTION 3: INSTRUCTIONS LOADING SECTION
-	 * This section of code loads the instructions from the .text segment into an Instruction vector, which will later be adjusted.
-	 * I parse instructions in the ELF file from beg_code_segment to end_code_segment.
-	 * This means ARM environment variables are read in since those are located ahead of the code entry point.
+	 * This section of code loads the instructions from the .text segment 
+	 * into an Instruction vector, which will later be adjusted.
+	 * I parse instructions in the ELF file from beg_code_segment to 	  
+	 * end_code_segment.
+	 * This means ARM environment variables are read in since those are 		 
+	 * located ahead of the code entry point.
 	 *
-	 * code_entry_address variable holds the actual address in memory of the entry point, beg_code_segment and end_code_segments are locations in
-	 * the ELF file.
+	 * code_entry_address variable holds the actual address in memory of 
+	 * the entry point, beg_code_segment and end_code_segments are 		 
+	 * locations in the ELF file.
 	 */
 
 	//load all instructions into data structures
@@ -200,8 +225,12 @@ int main()
 			addressInMemory = beg_code_segment + mem_offset;
 
 
-			/* If the address read in is found to be 32 - bits, read in a 32 - bit instruction and move on to the instruction 4 - bytes over
-			 * Otherwise if the address read in is found to be 16 - bits, read in the 16 - bit instruction and move on to the instruction 2 - bytes over
+			/* If the address read in is found to be 32 - bits, 
+			 * read in a 32 - bit instruction and move on to the 
+			 * instruction 4 - bytes over
+			 * Otherwise if the address read in is found to be 16 
+			 * - bits, read in the 16 - bit instruction and move 				 
+			 * on to the instruction 2 - bytes over
 			 */
 
 			if (is32Bit(numericInstruction)){
@@ -223,7 +252,10 @@ int main()
 
 			instructionsVector.push_back(currInstruction);
 
-			/* Leftover mapping stuff from before -- was clunky and too confusing*/
+			/* Leftover mapping stuff from before -- was clunky 
+			 * and too confusing
+			 */
+
 			/*
 			int index = 0;
 			string stringCommand = int_to_hexString(numericInstruction, commandLengthInBytes*2);
@@ -245,19 +277,29 @@ int main()
 
 	/* CODE SECTION 4: INSTRUCTIONS ADJUSTMENT SECTION
 	 *
-	 * Originally there was a whole mapping scheme going on here. My last version had three loops:
-	 * The first loop went linearly through the entire instructionsVector and inserted noops
-	 * The second loop went through and updated instructions based on a referenced instruction
-	 *		e.g. inside Instruction A, there is a pointer to Instruction B
-	 *			if Instruction A is going to jump to Instruction B and Instruction B's memory location has changed, then
-	 *			Instruction A's bit representation will be changed to jump to the new location of Instruction B
+	 * Originally there was a whole mapping scheme going on here. My last 
+	 * version had three loops:
+	 * The first loop went linearly through the entire instructionsVector 
+	 * and inserted noops
+	 * The second loop went through and updated instructions based on a 
+	 * referenced instruction
+	 *		e.g. inside Instruction A, there is a pointer to 
+	 *		Instruction B.
+	 *			if Instruction A is going to jump to 
+	 * 			Instruction B and Instruction B's memory 
+	 * 			location has changed, then Instruction A's bit 
+	 * 			representation will be changed to jump to the 
+	 *			new location of Instruction B
 	 * 
-	 * Suggestion from Mark: Organize by logical blocks, where each logical block ends with a jump or branch
+	 * The implementation used a greedy algorithm 
+	 * 
+	 * Suggestion from Mark: Organize by logical blocks, where each 
+	 * logical block ends with a jump or branch
 	 */
 
 	/* CODE SECTION 5: Rebuild the ELF File
-	 * Section needs to be redon
-	 * Didn't get to this section, needs to be redone.
+	 * Section needs to be redone
+	 * Original implementation didn't work anyways
 	 */
 
 

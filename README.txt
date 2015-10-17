@@ -36,7 +36,10 @@ qemu-system-arm -machine none -cpu cortex-m3
 
 Run program
 --------------------------------------------------
-Compile with Visual Studio for Windows or Eclipse on Linux
+Compile with Visual Studio for Windows or Eclipse/Make on Linux
+Makefile is provided with the rest of the source code
+
+The program takes no inputs; only the ELF you want to modify (named ELF
 
 
 Convert modified ELF to bin
@@ -65,20 +68,3 @@ http://infocenter.arm.com/help/topic/com.arm.doc.dui0101a/DUI0101A_Elf.pdf
 
 Useful infographic for ELF files
 https://code.google.com/p/corkami/wiki/ELF101
-
-
-Additional Miscellaneous Information:
-==================================================
-Addresses.txt is a text file with hex representations of 32-bit addresses.
-Each 32-bit address is 8 hex characters prefixed by 0x.
-Each address is separated from other addresses by newlines or whitespaces.
-
-e.g.
-0x040302AF
-0x28EA1423
-0x00FF0243
-
-This program is operating under the assumption that the ELF file is little endian.
-This is because the ARM LPC1768, our target microcontroller, is little endian.
-In normal situations, the ELF file is the same endianness as the target machine.
-ARM specifications store instructions as little endian; memory may be either.

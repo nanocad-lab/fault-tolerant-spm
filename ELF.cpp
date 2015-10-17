@@ -1,8 +1,11 @@
+//C libraries
 #include <stdint.h>
+#include <iostream>
+
+//user defined
 #include "ELF.h"
 #include "MiscFuncs.h"
 #include "Instruction.h"
-#include <iostream>
 
 ElfHeader::ElfHeader(ifstream* file, int elfHeaderStart, char* buff)
 {

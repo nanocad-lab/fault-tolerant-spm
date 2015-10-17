@@ -1,8 +1,11 @@
-#include "MiscFuncs.h"
+//C libraries
 #include <unordered_set>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+
+//user defined
+#include "MiscFuncs.h"
 using namespace std;
 
 // check to see if the address is safe to write
