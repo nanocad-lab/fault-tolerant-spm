@@ -1,27 +1,8 @@
-TODO
+TODOs
 ==================================================
-Notes:
-Adjust where for loop starts and ends to only look for addresses in code segment.
-ELF part of the code was just written to figure out where code segment is.
-Based on assumption that there was only code in the file, so iterator in for loops such as input eip is not actually the eip of the code but location of char in in the input file (from Muzammil)
 
-Items not done yet:
-
--IT block
-
--Make current code work on ELF file
-	-make code start looking for faults only in the code section
-
--Computated Branch
-
--Check for other instructions that have offsets and modify their offsets if necessary
+Identify instruction by opcode.
+Loop through and properly insert blanks.
 
 Get the program to work on stack.
 Get the program to work on heap. (May not be necessary for microcontrollers, but interesting to think about.)
-
-
-Self to-do
-==================================================
-Finish cleaning up code.
-
-
