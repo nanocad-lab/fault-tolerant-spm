@@ -7,6 +7,9 @@
 #include <fstream> 
 #include <iostream>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
 
 //user defined
 #include "Instruction.h"
@@ -15,7 +18,7 @@
 
 using namespace std;
 
-int main()
+int main(int argc, char *argv[])
 {
 	/* Entire code could be made more clear by: 
 	 * 1) Using the stdint.h typedefs
@@ -61,8 +64,8 @@ int main()
 	cout << "Loading addresses" << endl;
 	while (!feof(addressFile)){
 		int scanVal = fscanf(addressFile, "0x%8c ", addressBuff);
-		string addressString(addressBuff);
-		unsigned int intAddress = (unsigned int) stoul(addressString, nullptr, 16);
+		string straddress = addressbuff;
+		unsigned int numaddress = (unsigned int) stoul(straddress, nullptr, 16);
 
 		badAddresses.insert(intAddress);
 	}

@@ -1,8 +1,0 @@
-TODOs
-==================================================
-
-Identify instruction by opcode.
-Loop through and properly insert blanks.
-
-Get the program to work on stack.
-Get the program to work on heap. (May not be necessary for microcontrollers, but interesting to think about.)
