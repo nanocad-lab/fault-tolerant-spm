@@ -33,6 +33,10 @@ sudo apt-get install qemu-system-arm
 --------------------------------------------------
 qemu-system-arm -machine none -cpu cortex-m3
 
+##Compile for bare metal ARM Cortex-M3
+--------------------------------------------------
+arm-none-eabi-gcc test.c -lc -specs=nosys.specs
+
 
 ##Run program
 --------------------------------------------------
