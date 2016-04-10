@@ -1,6 +1,9 @@
 Fault Tolerant Scratchpad Memory
 ==================================================
 
+##Running the Program
+Usage: fault-tolerant-spm [-m memory_size] [-o output] input
+
 #Getting Started
 
 ##Running on Linux with GCC
