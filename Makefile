@@ -26,7 +26,7 @@ Instruction.o: Instruction.cpp Instruction.h MiscFuncs.h
 MiscFuncs.o: MiscFuncs.cpp MiscFuncs.h
 	$(CPP) $(CPPFLAGS) MiscFuncs.cpp $(HDRLOC)
 	
-Source.o: main.cpp Instruction.h MiscFuncs.h ELF.h
+main.o: main.cpp Instruction.h MiscFuncs.h ELF.h
 	$(CPP) $(CPPFLAGS) main.cpp $(HDRLOC)
 	
 clean:
