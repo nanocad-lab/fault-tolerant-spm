@@ -2,7 +2,7 @@
 # This is a script that runs the entire Fault-Tolerant Scratchpad system. This script is not finished; further information about target board is required for arm-none-eabi-gcc options.
 
 #Build files for the ARM Cortex-M3 into an ELF program
-arm-none-eabi-gcc -someoptions
+arm-none-eabi-gcc -nostdlib -marm
 
 #Run the Fault-Tolerant program on the ELF program
 fault-tolerant-spm input -m memory -o modifiedelf
