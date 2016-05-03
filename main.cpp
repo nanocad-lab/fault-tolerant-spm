@@ -16,18 +16,26 @@
 
 using namespace std;
 
+char *program_name;
 int memory_size = 16384;
 char *input_file_path;
 char *output_file_path;
 
+void
+print_usage()
+{
+    fprintf(stderr, "Usage: %s [-m memory_size] [-o output] input\n", program_name);
+}
+
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
     /* SECTION 1: OPTION PARSING SECTION
      * This part of the program parses arguments and sets fields
      * accordingly.
      */
 
+    program_name = argv[0];
     /* Parse arguments to program */
     int c;
     while ((c = getopt(argc, argv, "m:o:")) != -1){
@@ -42,12 +50,14 @@ main (int argc, char *argv[])
                 input_file_path = optarg;
                 break;
             default:
-                fprintf(stderr, "Usage: %s [-m memory_size] [-o output] input\n", argv[0]);
+                print_usage();
             exit(EXIT_FAILURE);
         }
     }
     if (optind < argc) {
         input_file_path = argv[optind];
+	fprintf(stdout, "optind: %d\n", optind);
+	fprintf(stdout, "Input File Path: %s\n", input_file_path);
     }
     // printf("Running fault-tolerant-spm with memory constraint as %d bytes\n", memory_size);
     // printf("Input file path is %s\n", input_file_path);
@@ -71,6 +81,11 @@ main (int argc, char *argv[])
      */
 
     /* Parse addresses */
+    if(input_file_path == NULL){
+	fprintf(stderr, "Input file is required\n");
+	print_usage();
+	exit(EXIT_FAILURE);
+    }
     FILE* address_file;
     address_file = fopen(input_file_path, "r");
     if (address_file == NULL) {
