@@ -7,6 +7,8 @@
 #include <errno.h>
 #include <unordered_set>
 #include <set>
+#include <algorithm>
+#include <vector>
 #include <string>
 #include <elf.h>
 
@@ -20,6 +22,15 @@ char *program_name;
 int memory_size = 16384;
 char *input_file_path;
 char *output_file_path;
+
+typedef struct data_bin
+{
+    int start_address;
+    int size;
+} data_bin;
+
+#define SRAM_START 0x20000000
+#define SRAM_END 0x3FFFFFFF
 
 void
 print_usage()
@@ -95,7 +106,7 @@ main(int argc, char *argv[])
     printf("Address file has been opened\n");
 
     /* Load from addresses.txt into bad_addresses*/
-    unordered_set<unsigned int> bad_addresses;
+    vector<unsigned int> bad_addresses;
     char* address_buff = new char[8];
 
     printf("Loading addresses\n");
@@ -105,7 +116,17 @@ main(int argc, char *argv[])
         printf("%s\n", address_str.c_str());
         unsigned int numeric_address = (unsigned int) stoul(address_str, nullptr, 16);
 
-        bad_addresses.insert(numeric_address);
+        if(numeric_address < SRAM_START || numeric_address > (SRAM_START + memory_size)){
+            fprintf(stderr, "The address %s is not within SRAM range", address_str.c_str());
+            continue;
+        }
+
+        bad_addresses.push_back(numeric_address);
+    }
+
+    sort(bad_addresses.begin(), bad_addresses.end());
+    for(vector<unsigned int>::iterator it = bad_addresses.begin(); it != bad_addresses.end(); ++it){
+        printf("%d\n", *it);
     }
 
     printf("Addresses successfully loaded\n");
@@ -120,8 +141,16 @@ main(int argc, char *argv[])
     }
     printf("Address file has been closed\n");
 
+    /* SECTION 3: BIN CREATION SECTION
+     * This section creates bins given the addresses from the previous section.
+     */
 
-    /* SECTION 3: ELF PARSING SECTION 
+    vector<data_bin> data_bins;
+
+    
+
+
+    /* SECTION ?: ELF PARSING SECTION 
      * This section reads in the generated ELF file from running 
      * arm-none-eabi-gcc.
      * 
@@ -146,7 +175,7 @@ main(int argc, char *argv[])
      * memory may be either. (The LPC1768 is little endian)
      */
 
-
+    //ELF PARSING NEEDS TO BE REWRITTEN USING LINUX LIBRARY ELF.H
 
     /* SECTION ?: CLEAN UP 
      * This section cleans up the program, indicating a finish.
