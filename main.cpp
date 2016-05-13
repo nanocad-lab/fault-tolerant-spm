@@ -106,7 +106,7 @@ main(int argc, char *argv[])
     printf("Address file has been opened\n");
 
     /* Load from addresses.txt into bad_addresses*/
-    vector<unsigned int> bad_addresses;
+    set<unsigned int> bad_addresses;
     char* address_buff = new char[8];
 
     printf("Loading addresses\n");
@@ -121,11 +121,10 @@ main(int argc, char *argv[])
             continue;
         }
 
-        bad_addresses.push_back(numeric_address);
+        bad_addresses.insert(numeric_address);
     }
 
-    sort(bad_addresses.begin(), bad_addresses.end());
-    for(vector<unsigned int>::iterator it = bad_addresses.begin(); it != bad_addresses.end(); ++it){
+    for(set<unsigned int>::iterator it = bad_addresses.begin(); it != bad_addresses.end(); ++it){
         printf("%d\n", *it);
     }
 
@@ -144,10 +143,16 @@ main(int argc, char *argv[])
     /* SECTION 3: BIN CREATION SECTION
      * This section creates bins given the addresses from the previous section.
      */
-
-    vector<data_bin> data_bins;
-
     
+    //prime the addresses to 32-bit alignment, use set for automatic inserted sort?
+    //MOVE THIS SECTION TO ADDRESS PARSING
+    for(set<unsigned int>::iterator it = bad_addresses.begin(); it != bad_addresses.end(); ++it){
+        unsigned int curr_addr = *it;
+        unsigned int remainder = curr_addr % 4;
+        curr_addr += (4 - remainder);
+        //*it = curr_addr;
+    }
+
 
 
     /* SECTION ?: ELF PARSING SECTION 
