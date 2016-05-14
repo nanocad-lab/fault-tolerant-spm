@@ -1,7 +1,7 @@
 #!/bin/bash
 
 temp_file=$(mktemp)
-shuf -n $1 -i 536870912-536887296 > temp_file
-( echo "obase=16" ; cat temp_file ) | bc > addresses.txt
+shuf -n $1 -i 536870912-536887296 > $temp_file
+( echo "obase=16" ; cat $temp_file ) | bc > addresses.txt
 sed -i -e 's/^/0x/' addresses.txt
 rm ${temp_file}
