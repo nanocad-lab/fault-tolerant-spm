@@ -33,9 +33,20 @@ typedef struct data_bin
 #define SRAM_END 0x3FFFFFFF
 
 void
+print_item(unsigned int x)
+{
+    printf("%d\n", x);
+}
+
+void
 print_usage()
 {
     fprintf(stderr, "Usage: %s [-m memory_size] [-o output] input\n", program_name);
+}
+
+void
+align_bad_address(unsigned int &addr){
+    addr -= (addr % 4);
 }
 
 int
@@ -126,9 +137,7 @@ main(int argc, char *argv[])
 
     sort(bad_addresses.begin(), bad_addresses.end());
 
-    for(vector<unsigned int>::iterator it = bad_addresses.begin(); it != bad_addresses.end(); ++it){
-        printf("%d\n", *it);
-    }
+    for_each(bad_addresses.begin(), bad_addresses.end(), print_item);
 
     printf("Addresses successfully loaded\n");
     printf("There are %u bad addresses\n", (unsigned int)bad_addresses.size());
@@ -146,21 +155,28 @@ main(int argc, char *argv[])
      * This section creates bins given the addresses from the previous section.
      */
     
-    //prime the addresses to 32-bit alignment
-    for(vector<unsigned int>::iterator it = bad_addresses.begin(); it != bad_addresses.end(); ++it){
-        unsigned int curr_addr = *it;
-        unsigned int remainder = curr_addr % 4;
-        curr_addr += (4 - remainder);
-        *it = curr_addr;
-    }
+    //prime the addresses to 32-bit alignment for bad "words"
+    for_each(bad_addresses.begin(), bad_addresses.end(), align_bad_address);
 
     //copy to set to sift potential duplicates from aligning
-    //NOTE: NEED TO SIFT FOR ADDRESSES ALIGNED OUT OF MEMORY SPACE
-    set<unsigned int> aligned_bad_addresses;
-    for(vector<unsigned int>::iterator it = bad_addresses.begin(); it != bad_addresses.end(); ++it){
-        aligned_bad_addresses.insert(*it);
-    }
+    set<unsigned int> aligned_bad_addresses(bad_addresses.begin(), bad_addresses.end());
     
+    //create vector of databins using aligned bad_addresses
+    vector<data_bin> data_bins;
+    for(set<unsigned int>::iterator it = aligned_bad_addresses.begin(); it != aligned_bad_addresses.end(); ++it){
+        data_bin tmpbin;
+        tmpbin.start_address = (*it) + 1;
+        if(next(it) != aligned_bad_addresses.end()){
+            tmpbin.size = *(next(it)) - tmpbin.start_address;
+        }
+        else{
+            tmpbin.size = (SRAM_START + memory_size) - tmpbin.start_address;
+        }
+        data_bins.push_back(tmpbin);
+    }
+
+    //dump data bins here
+
     /* SECTION ?: ELF PARSING SECTION 
      * This section reads in the generated ELF file from running 
      * arm-none-eabi-gcc.
