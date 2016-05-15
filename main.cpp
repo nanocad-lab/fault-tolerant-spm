@@ -1,36 +1,38 @@
-//C Library Headers
+/* C Library Headers */
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <elf.h>
+
+/* C++ Library Headers */
 #include <unordered_set>
 #include <set>
 #include <algorithm>
 #include <vector>
 #include <string>
-#include <elf.h>
 
-//User Defined Headers
+/* User Defined Headers */
 #include "Instruction.h"
 #include "MiscFuncs.h"
 
 using namespace std;
 
-char *program_name;
-int memory_size = 16384;
-char *input_file_path;
-char *output_file_path;
+#define SRAM_START 0x20000000
+#define SRAM_END 0x3FFFFFFF
 
-typedef struct data_bin
+typedef struct DataBin
 {
     int start_address;
     int size;
-} data_bin;
+} DataBin;
 
-#define SRAM_START 0x20000000
-#define SRAM_END 0x3FFFFFFF
+char    *program_name;
+char    *input_file_path;
+char    *output_file_path;
+int     memory_size = 16384;
 
 void
 print_item(unsigned int x)
@@ -60,7 +62,7 @@ main(int argc, char *argv[])
     program_name = argv[0];
     /* Parse arguments to program */
     int c;
-    while ((c = getopt(argc, argv, "m:o:")) != -1){
+    while ((c = getopt(argc, argv, "m:o:")) != -1) {
     	switch (c){
             case 'm':
                 memory_size = atoi(optarg);
@@ -78,12 +80,12 @@ main(int argc, char *argv[])
     }
     if (optind < argc) {
         input_file_path = argv[optind];
-	fprintf(stdout, "optind: %d\n", optind);
-	fprintf(stdout, "Input File Path: %s\n", input_file_path);
+        fprintf(stdout, "optind: %d\n", optind);
+        fprintf(stdout, "Input File Path: %s\n", input_file_path);
     }
-    // printf("Running fault-tolerant-spm with memory constraint as %d bytes\n", memory_size);
-    // printf("Input file path is %s\n", input_file_path);
-    // printf("Output file path is %s\n", output_file_path);
+    printf("Running fault-tolerant-spm with memory constraint as %d bytes\n", memory_size);
+    printf("Input file path is %s\n", input_file_path);
+    printf("Output file path is %s\n", output_file_path);
 
     /* SECTION 2: ADDRESS PARSING SECTION
      * This part of the program parses an address file given paths from
@@ -103,10 +105,10 @@ main(int argc, char *argv[])
      */
 
     /* Parse addresses */
-    if(input_file_path == NULL){
-	fprintf(stderr, "Input file is required\n");
-	print_usage();
-	exit(EXIT_FAILURE);
+    if (input_file_path == NULL) {
+        fprintf(stderr, "Input file is required\n");
+        print_usage();
+        exit(EXIT_FAILURE);
     }
     FILE* address_file;
     address_file = fopen(input_file_path, "r");
@@ -121,13 +123,13 @@ main(int argc, char *argv[])
     char* address_buff = new char[8];
 
     printf("Loading addresses\n");
-    while (!feof(address_file)){
+    while (!feof(address_file)) {
         fscanf(address_file, "0x%8c ", address_buff);
         string address_str = address_buff;
         printf("%s\n", address_str.c_str());
         unsigned int numeric_address = (unsigned int) stoul(address_str, nullptr, 16);
-	printf("0x%08x\n", numeric_address);
-        if(numeric_address < SRAM_START || numeric_address > (SRAM_START + memory_size)){
+        printf("0x%08x\n", numeric_address);
+        if (numeric_address < SRAM_START || numeric_address > (SRAM_START + memory_size)) {
             fprintf(stderr, "The address %s is not within SRAM range\n", address_str.c_str());
             continue;
         }
@@ -145,7 +147,7 @@ main(int argc, char *argv[])
     //clean up address parsing
     delete[] address_buff;
     int fcloseerr;
-    if((fcloseerr = fclose(address_file)) != 0){
+    if ((fcloseerr = fclose(address_file)) != 0) {
         fprintf(stderr, "Error: failed to close address file\n");
         return fcloseerr;
     }
@@ -162,17 +164,17 @@ main(int argc, char *argv[])
     set<unsigned int> aligned_bad_addresses(bad_addresses.begin(), bad_addresses.end());
     
     //create vector of databins using aligned bad_addresses
-    vector<data_bin> data_bins;
-    for(set<unsigned int>::iterator it = aligned_bad_addresses.begin(); it != aligned_bad_addresses.end(); ++it){
-        data_bin tmpbin;
+    vector<DataBin> DataBins;
+    for (set<unsigned int>::iterator it = aligned_bad_addresses.begin(); it != aligned_bad_addresses.end(); ++it) {
+        DataBin tmpbin;
         tmpbin.start_address = (*it) + 1;
-        if(next(it) != aligned_bad_addresses.end()){
+        if (next(it) != aligned_bad_addresses.end()) {
             tmpbin.size = *(next(it)) - tmpbin.start_address;
         }
-        else{
+        else {
             tmpbin.size = (SRAM_START + memory_size) - tmpbin.start_address;
         }
-        data_bins.push_back(tmpbin);
+        DataBins.push_back(tmpbin);
     }
 
     //dump data bins here
