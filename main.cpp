@@ -49,7 +49,8 @@ print_usage()
 }
 
 void
-align_bad_address(unsigned int &addr){
+align_bad_address(unsigned int &addr)
+{
     addr -= (addr % WORD_SIZE);
 }
 
@@ -88,6 +89,8 @@ main(int argc, char *argv[])
     printf("Running fault-tolerant-spm with memory constraint as %d bytes\n", memory_size);
     printf("Input file path is %s\n", input_file_path);
     printf("Output file path is %s\n", output_file_path);
+
+
 
     /* SECTION 2: ADDRESS PARSING SECTION
      * This part of the program parses an address file given paths from
@@ -159,7 +162,9 @@ main(int argc, char *argv[])
     }
     printf("Address file has been closed\n");
 
-    /* SECTION 3: BIN CREATION SECTION
+
+
+    /* SECTION 3: DATA BIN CREATION SECTION
      * This section creates bins given the addresses from the previous section.
      */
     
@@ -201,11 +206,11 @@ main(int argc, char *argv[])
         }
     }
 
+    /* Number of data bins should be number of bad addresses + 1 */
     printf("There are %u data bins\n", (unsigned int)data_bins.size());
 
-    //dump data bins here
+    /* dump data bins for visual confirmation */
     for_each(data_bins.begin(), data_bins.end(), [](DataBin x){ print_item(x.start_address); print_item(x.size); });
-
 
 
 
@@ -235,6 +240,85 @@ main(int argc, char *argv[])
      */
 
     //ELF PARSING NEEDS TO BE REWRITTEN USING LINUX LIBRARY ELF.H
+
+    // int input_eip = 0;
+    // int actual_eip = 0;
+    // char* currInstruction = new char[5];
+    // char* elfBuff = new char[5];
+    // unsigned int numericInstruction = 0; //32-bit form of currInstruction
+    // int commandLengthInBytes = 0; //length of the current command
+
+    // char endianness;
+
+    // vector<ProgramHeader> programHeaderTable;
+    // vector<SectionHeader> sectionHeaderTable;
+
+    // unsigned int beg_code_segment;
+    // unsigned int end_code_segment;
+    // unsigned int code_entry_address;
+
+    // //load values for ELF variables, load all section headers and program headers
+    // ifstream fileset("program.elf", ios::in | ios::binary | ios::ate);
+    // if (!fileset){
+    //     cout << "Error: program.elf does not exist in the working directory or cannot be opened" << endl;
+    //     return -1;
+    // }
+    // else {
+    //     cout << "program.elf has been opened" << endl;
+    //     ElfHeader elfHeader(&fileset, 0, elfBuff);
+    //     endianness = elfHeader.e_ident[5];
+
+    //     code_entry_address = elfHeader.e_entry; //the address where code execution will begin
+    //     cout << showbase;
+    //     cout << "entry point address: " << hex << code_entry_address << endl;
+
+    //     //load all of the program headers into programHeaderTable data structure
+    //     unsigned int progHdrReadAddr = elfHeader.e_phoff;
+    //     cout << "Program header table starts at " << hex << progHdrReadAddr << endl;
+    //     cout << "Program header size is " << dec << elfHeader.e_phentsize << " bytes" << endl;
+    //     cout << "Program header number is " << dec << elfHeader.e_phnum << " headers" << endl;
+    //     if (progHdrReadAddr != 0) { //if e_phnum is 0, then e_phoffm must also be 0
+    //         for (int i = 0; i < elfHeader.e_phnum; i++)
+    //         {
+    //             ProgramHeader programHeader(&fileset, progHdrReadAddr, elfBuff, endianness);
+    //             programHeaderTable.push_back(programHeader);
+    //             progHdrReadAddr += elfHeader.e_phentsize;
+    //         }
+    //         beg_code_segment = programHeaderTable.at(0).p_paddr + programHeaderTable.at(0).p_offset; //fairly certain this is correct
+    //         end_code_segment = beg_code_segment + programHeaderTable.at(0).p_memsz; //first program section is code section
+    //         cout << "Program headers loaded" << endl;
+    //         cout << "There are " << dec << programHeaderTable.size() << " entries in the program header table" << endl;
+    //     }
+    //     else
+    //         cout << "Warning: No program header table exists" << endl;
+
+    //     //load all of the section headers into sectionHeaderTable data structure
+    //     unsigned int sectReadAddr = elfHeader.e_shoff;
+    //     cout << "Section header table starts at " << hex << sectReadAddr << endl;
+    //     cout << "Section header size is " << dec << elfHeader.e_shentsize << " bytes" << endl;
+    //     cout << "Section header number is " << dec << elfHeader.e_shnum << " headers" << endl;
+    //     if (sectReadAddr != 0) { //if e_shnum is 0, then e_shoff must also be 0
+    //         for (int i = 0; i < elfHeader.e_shnum; i++)
+    //         {
+    //             SectionHeader section(&fileset, sectReadAddr, elfBuff, endianness);
+    //             sectionHeaderTable.push_back(section);
+    //             sectReadAddr += elfHeader.e_shentsize;
+    //         }
+    //         cout << "Section headers loaded" << endl;
+    //         cout << "There are " << dec << sectionHeaderTable.size() << " entries in the section header table" << endl;
+    //     }
+    //     else
+    //         cout << "Warning: No section header table exists" << endl;
+    //     fileset.close();
+    //     cout << "program.elf has been closed\n" << endl;
+    // }
+    // delete[] elfBuff;
+
+
+
+
+
+
 
     /* SECTION ?: CLEAN UP 
      * This section cleans up the program, indicating a finish.
