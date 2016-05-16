@@ -131,7 +131,7 @@ main(int argc, char *argv[])
         unsigned int numeric_address = (unsigned int) stoul(address_str, nullptr, 16);
         //printf("%d\n", numeric_address);
         //printf("0x%08x\n", numeric_address);
-        if (numeric_address < SRAM_START || numeric_address > (SRAM_START + 4*memory_size)) {
+        if (numeric_address < SRAM_START || numeric_address > (SRAM_START + memory_size)) {
             fprintf(stderr, "The address %s is not within SRAM range\n", address_str.c_str());
             continue;
         }
