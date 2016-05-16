@@ -30,6 +30,7 @@ typedef struct DataBin
     unsigned int size;
 } DataBin;
 
+
 char    *program_name;
 char    *input_file_path;
 char    *output_file_path;
@@ -119,8 +120,8 @@ main(int argc, char *argv[])
     }
     printf("Address file has been opened\n");
 
-    /* Load from addresses.txt into bad_addresses*/
-    vector<unsigned int> bad_addresses;
+    /* Load from addresses.txt into bad_addrs*/
+    vector<unsigned int> bad_addrs;
     char* address_buff = new char[16];
 
     printf("Loading addresses\n");
@@ -138,16 +139,16 @@ main(int argc, char *argv[])
             fprintf(stderr, "The address %s is not within SRAM range\n", address_str.c_str());
         }
         else {
-            bad_addresses.push_back(numeric_address);
+            bad_addrs.push_back(numeric_address);
         }
     }
 
-    sort(bad_addresses.begin(), bad_addresses.end());
+    sort(bad_addrs.begin(), bad_addrs.end());
 
-    //for_each(bad_addresses.begin(), bad_addresses.end(), print_item);
+    //for_each(bad_addrs.begin(), bad_addrs.end(), print_item);
 
     printf("Addresses successfully loaded\n");
-    //printf("There are %u bad addresses\n", (unsigned int)bad_addresses.size());
+    //printf("There are %u bad addresses\n", (unsigned int)bad_addrs.size());
 
     //clean up address parsing
     delete[] address_buff;
@@ -163,46 +164,49 @@ main(int argc, char *argv[])
      */
     
     //prime the addresses to 32-bit alignment for bad "words"
-    for_each(bad_addresses.begin(), bad_addresses.end(), align_bad_address); 
-    //for_each(bad_addresses.begin(), bad_addresses.end(), print_item);
+    for_each(bad_addrs.begin(), bad_addrs.end(), align_bad_address); 
+    //for_each(bad_addrs.begin(), bad_addrs.end(), print_item);
 
     /* copy to set to sift potential duplicates from aligning */
-    set<unsigned int> aligned_bad_addresses(bad_addresses.begin(), bad_addresses.end());
+    set<unsigned int> aligned_bad_addrs(bad_addrs.begin(), bad_addrs.end());
     
-    printf("There are %u unique bad addresses\n", (unsigned int)aligned_bad_addresses.size());
+    printf("There are %u unique bad addresses\n", (unsigned int)aligned_bad_addrs.size());
 
 
-    //create vector of databins using aligned bad_addresses
+    //create vector of databins using aligned bad_addrs
     vector<DataBin> data_bins;
 
-    //add in first bin
-    
-    DataBin first_bin;
-    first_bin.start_address = SRAM_START;
-    first_bin.size = *(aligned_bad_addresses.begin()) - SRAM_START;
-    data_bins.push_back(first_bin);
+    if (data_bins.size() == 0) {
+        printf("No ELF adjustment needed\n");
+        exit(0);
+    }
+    else {
+        //add in first bin
+        DataBin first_bin;
+        first_bin.start_address = SRAM_START;
+        first_bin.size = *(aligned_bad_addrs.begin()) - SRAM_START;
+        data_bins.push_back(first_bin);
 
-    for (set<unsigned int>::iterator it = aligned_bad_addresses.begin(); it != aligned_bad_addresses.end(); ++it) {
-        DataBin tmpbin;
-        tmpbin.start_address = (*it) + WORD_SIZE;
+        for (set<unsigned int>::iterator it = aligned_bad_addrs.begin(); it != aligned_bad_addrs.end(); ++it) {
+            DataBin tmpbin;
+            tmpbin.start_address = (*it) + WORD_SIZE;
 
-        if (it == aligned_bad_addresses.begin()) {
-            DataBin firstbin;
+            if (next(it) != aligned_bad_addrs.end()) {
+                tmpbin.size = *(next(it)) - tmpbin.start_address;
+            }
+            else {
+                tmpbin.size = (SRAM_START + memory_size) - tmpbin.start_address; //CHECK THIS
+            }
+            data_bins.push_back(tmpbin);
         }
-
-        if (next(it) != aligned_bad_addresses.end()) {
-            tmpbin.size = *(next(it)) - tmpbin.start_address;
-        }
-        else {
-            tmpbin.size = (SRAM_START + memory_size) - tmpbin.start_address;
-        }
-        data_bins.push_back(tmpbin);
     }
 
     printf("There are %u data bins\n", (unsigned int)data_bins.size());
 
     //dump data bins here
     for_each(data_bins.begin(), data_bins.end(), [](DataBin x){ print_item(x.start_address); print_item(x.size); });
+
+
 
 
     /* SECTION ?: ELF PARSING SECTION 
