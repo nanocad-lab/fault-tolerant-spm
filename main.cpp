@@ -25,8 +25,8 @@ using namespace std;
 
 typedef struct DataBin
 {
-    int start_address;
-    int size;
+    unsigned int start_address;
+    unsigned int size;
 } DataBin;
 
 char    *program_name;
@@ -120,16 +120,18 @@ main(int argc, char *argv[])
 
     /* Load from addresses.txt into bad_addresses*/
     vector<unsigned int> bad_addresses;
-    char* address_buff = new char[8];
+    char* address_buff = new char[16];
 
     printf("Loading addresses\n");
     while (!feof(address_file)) {
-        fscanf(address_file, "0x%8c ", address_buff);
+        //fscanf(address_file, "0x%8c ", address_buff);
+        fscanf(address_file, "%s", address_buff);
         string address_str = address_buff;
-        printf("%s\n", address_str.c_str());
+        //printf("%s\n", address_str.c_str());
         unsigned int numeric_address = (unsigned int) stoul(address_str, nullptr, 16);
-        printf("0x%08x\n", numeric_address);
-        if (numeric_address < SRAM_START || numeric_address > (SRAM_START + memory_size)) {
+        //printf("%d\n", numeric_address);
+        //printf("0x%08x\n", numeric_address);
+        if (numeric_address < SRAM_START || numeric_address > (SRAM_START + 4*memory_size)) {
             fprintf(stderr, "The address %s is not within SRAM range\n", address_str.c_str());
             continue;
         }
@@ -164,7 +166,7 @@ main(int argc, char *argv[])
     set<unsigned int> aligned_bad_addresses(bad_addresses.begin(), bad_addresses.end());
     
     //create vector of databins using aligned bad_addresses
-    vector<DataBin> DataBins;
+    vector<DataBin> data_bins;
     for (set<unsigned int>::iterator it = aligned_bad_addresses.begin(); it != aligned_bad_addresses.end(); ++it) {
         DataBin tmpbin;
         tmpbin.start_address = (*it) + 1;
@@ -174,8 +176,10 @@ main(int argc, char *argv[])
         else {
             tmpbin.size = (SRAM_START + memory_size) - tmpbin.start_address;
         }
-        DataBins.push_back(tmpbin);
+        data_bins.push_back(tmpbin);
     }
+
+    //for_each(data_bins.begin(), data_bins.end(), [](DataBin x){ print_item(x.start_address); print_item(x.size); });
 
     //dump data bins here
 
