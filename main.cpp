@@ -22,6 +22,7 @@ using namespace std;
 
 #define SRAM_START 0x20000000
 #define SRAM_END 0x3FFFFFFF
+#define WORD_SIZE 4
 
 typedef struct DataBin
 {
@@ -48,7 +49,7 @@ print_usage()
 
 void
 align_bad_address(unsigned int &addr){
-    addr -= (addr % 4);
+    addr -= (addr % WORD_SIZE);
 }
 
 int
@@ -80,7 +81,7 @@ main(int argc, char *argv[])
     }
     if (optind < argc) {
         input_file_path = argv[optind];
-        fprintf(stdout, "optind: %d\n", optind);
+        // fprintf(stdout, "optind: %d\n", optind);
         fprintf(stdout, "Input File Path: %s\n", input_file_path);
     }
     printf("Running fault-tolerant-spm with memory constraint as %d bytes\n", memory_size);
@@ -125,26 +126,28 @@ main(int argc, char *argv[])
     printf("Loading addresses\n");
     while (!feof(address_file)) {
         //fscanf(address_file, "0x%8c ", address_buff);
-        fscanf(address_file, "%s", address_buff);
+        if (fscanf(address_file, "%s", address_buff) == EOF) {
+            break;
+        }
         string address_str = address_buff;
         //printf("%s\n", address_str.c_str());
         unsigned int numeric_address = (unsigned int) stoul(address_str, nullptr, 16);
-        //printf("%d\n", numeric_address);
+        printf("%d\n", numeric_address);
         //printf("0x%08x\n", numeric_address);
         if (numeric_address < SRAM_START || numeric_address > (SRAM_START + memory_size)) {
             fprintf(stderr, "The address %s is not within SRAM range\n", address_str.c_str());
-            continue;
         }
-
-        bad_addresses.push_back(numeric_address);
+        else {
+            bad_addresses.push_back(numeric_address);
+        }
     }
 
     sort(bad_addresses.begin(), bad_addresses.end());
 
-    for_each(bad_addresses.begin(), bad_addresses.end(), print_item);
+    //for_each(bad_addresses.begin(), bad_addresses.end(), print_item);
 
     printf("Addresses successfully loaded\n");
-    printf("There are %u bad addresses\n", (unsigned int)bad_addresses.size());
+    //printf("There are %u bad addresses\n", (unsigned int)bad_addresses.size());
 
     //clean up address parsing
     delete[] address_buff;
@@ -160,16 +163,33 @@ main(int argc, char *argv[])
      */
     
     //prime the addresses to 32-bit alignment for bad "words"
-    for_each(bad_addresses.begin(), bad_addresses.end(), align_bad_address);
+    for_each(bad_addresses.begin(), bad_addresses.end(), align_bad_address); 
+    //for_each(bad_addresses.begin(), bad_addresses.end(), print_item);
 
-    //copy to set to sift potential duplicates from aligning
+    /* copy to set to sift potential duplicates from aligning */
     set<unsigned int> aligned_bad_addresses(bad_addresses.begin(), bad_addresses.end());
     
+    printf("There are %u unique bad addresses\n", (unsigned int)aligned_bad_addresses.size());
+
+
     //create vector of databins using aligned bad_addresses
     vector<DataBin> data_bins;
+
+    //add in first bin
+    
+    DataBin first_bin;
+    first_bin.start_address = SRAM_START;
+    first_bin.size = *(aligned_bad_addresses.begin()) - SRAM_START;
+    data_bins.push_back(first_bin);
+
     for (set<unsigned int>::iterator it = aligned_bad_addresses.begin(); it != aligned_bad_addresses.end(); ++it) {
         DataBin tmpbin;
-        tmpbin.start_address = (*it) + 1;
+        tmpbin.start_address = (*it) + WORD_SIZE;
+
+        if (it == aligned_bad_addresses.begin()) {
+            DataBin firstbin;
+        }
+
         if (next(it) != aligned_bad_addresses.end()) {
             tmpbin.size = *(next(it)) - tmpbin.start_address;
         }
@@ -179,9 +199,11 @@ main(int argc, char *argv[])
         data_bins.push_back(tmpbin);
     }
 
-    //for_each(data_bins.begin(), data_bins.end(), [](DataBin x){ print_item(x.start_address); print_item(x.size); });
+    printf("There are %u data bins\n", (unsigned int)data_bins.size());
 
     //dump data bins here
+    for_each(data_bins.begin(), data_bins.end(), [](DataBin x){ print_item(x.start_address); print_item(x.size); });
+
 
     /* SECTION ?: ELF PARSING SECTION 
      * This section reads in the generated ELF file from running 
